@@ -1,12 +1,10 @@
-/* ---------- GLOBAL ---------- */
 .root {
     -fx-font-family: "Segoe UI", "Helvetica", sans-serif;
-    -fx-background-color: #ECF0F1; /* Light gray background for main area */
+    -fx-background-color: #ECF0F1;
 }
 
-/* ---------- SIDEBAR ---------- */
 .sidebar {
-    -fx-background-color: #2C3E50; /* Dark Slate */
+    -fx-background-color: #2C3E50;
 }
 
 .sidebar-header {
@@ -20,7 +18,6 @@
     -fx-font-weight: bold;
 }
 
-/* Navigation Buttons */
 .nav-button {
     -fx-background-color: transparent;
     -fx-text-fill: #BDC3C7;
@@ -37,68 +34,17 @@
 }
 
 .nav-button.active {
-    -fx-background-color: #E67E22; /* Orange Accent */
+    -fx-background-color: #E67E22;
     -fx-text-fill: white;
     -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(230, 126, 34, 0.4), 10, 0, 0, 2);
 }
 
 .nav-button-secondary {
     -fx-background-color: transparent;
     -fx-text-fill: #7F8C8D;
-    -fx-alignment: CENTER_LEFT;
     -fx-padding: 10 20;
     -fx-font-size: 13px;
     -fx-cursor: hand;
-}
-.nav-button-secondary:hover {
-    -fx-text-fill: #BDC3C7;
-}
-
-/* ---------- TOP BAR ---------- */
-.top-bar {
-    -fx-background-color: white;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);
-}
-
-.search-container {
-    -fx-background-color: #F5F6FA;
-    -fx-background-radius: 20;
-    -fx-padding: 5 15;
-}
-
-.search-input {
-    -fx-background-color: transparent;
-    -fx-prompt-text-fill: #95A5A6;
-    -fx-text-fill: #2C3E50;
-    -fx-pref-width: 250;
-}
-
-.search-icon {
-    -fx-background-color: transparent;
-    -fx-text-fill: #95A5A6;
-    -fx-font-size: 14px;
-    -fx-cursor: hand;
-}
-
-.user-name {
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-    -fx-text-fill: #2C3E50;
-}
-
-.user-role {
-    -fx-font-size: 11px;
-    -fx-text-fill: #7F8C8D;
-}
-
-/* ---------- MAIN CONTENT ---------- */
-.main-scroll {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-.main-scroll > .viewport {
-    -fx-background-color: transparent;
 }
 
 .section-header {
@@ -107,17 +53,12 @@
     -fx-text-fill: #34495E;
 }
 
-/* Cards */
 .card {
     -fx-background-color: white;
     -fx-background-radius: 12;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 15, 0, 0, 4);
     -fx-padding: 20;
     -fx-min-width: 200;
-}
-
-.card-icon {
-    -fx-font-size: 18px;
 }
 
 .card-title {
@@ -130,34 +71,18 @@
     -fx-font-size: 32px;
     -fx-font-weight: bold;
     -fx-text-fill: #2C3E50;
-    -fx-padding: 5 0;
-}
-
-.card-subtitle {
-    -fx-font-size: 12px;
-    -fx-text-fill: #95A5A6;
 }
 
 .card-subtitle.positive {
-    -fx-text-fill: #27AE60; /* Green */
+    -fx-text-fill: #27AE60;
 }
-
 .card-subtitle.negative {
-    -fx-text-fill: #C0392B; /* Red */
+    -fx-text-fill: #C0392B;
 }
 
-/* ---------- SEARCH DROPDOWN ---------- */
-.search-dropdown {
-    -fx-background-color: white;
-    -fx-background-radius: 8;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 5);
-    -fx-padding: 5;
+.main-scroll {
+    -fx-background-color: transparent;
 }
-.search-dropdown .list-cell {
-    -fx-background-color: white;
-    -fx-text-fill: #2C3E50;
-    -fx-padding: 8 10;
-}
-.search-dropdown .list-cell:hover {
-    -fx-background-color: #F5F6FA;
+.main-scroll > .viewport {
+    -fx-background-color: transparent;
 }

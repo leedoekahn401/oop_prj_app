@@ -7,10 +7,10 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import org.jfree.data.time.TimeSeriesCollection;
+import project.app.humanelogistics.db.MongoPostRepository;
 import project.app.humanelogistics.db.PostRepository;
 import project.app.humanelogistics.model.Developer;
 import project.app.humanelogistics.service.AnalysisService;
@@ -25,9 +25,11 @@ import java.util.List;
 public class DashBoardController {
 
     private static final String TOPIC_NAME = "Typhoon Yagi";
-    private static final String CHART_FILE_PATH = "temp_chart.png";
+    private static final String CHART_FILE_PATH = "sentiment_chart.png";
 
-    @FXML private StackPane rootPane;
+    // You should move this to a secure config file in a real app
+    private static final String DB_CONN = "mongodb+srv://ducanh4012006_db_user:5zEVVC3o7Sjnl2le@cluster0.dwzpibi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
     @FXML private VBox mainContent;
     @FXML private ImageView imgLogo;
     @FXML private Button informationButton;
@@ -40,7 +42,10 @@ public class DashBoardController {
 
     @FXML
     public void initialize() {
-        PostRepository repo = new PostRepository("storm_data", "posts");
+        // Dependency Injection - Easy to swap MongoPostRepository for SQLPostRepository
+        PostRepository repo = new MongoPostRepository(DB_CONN, "storm_data", "posts");
+
+        // Use KeywordAnalyzer (loads from JSON)
         this.model = new AnalysisService(repo, new KeywordSentimentAnalyzer());
         this.chartService = new ChartService();
 
@@ -51,7 +56,6 @@ public class DashBoardController {
                 : FXCollections.<Node>emptyObservableList();
 
         this.view = new DashboardView(mainContent, backup);
-
         setupNavigation();
     }
 
@@ -69,31 +73,29 @@ public class DashBoardController {
     private void handleShowInfo() {
         updateActiveButton(informationButton);
         List<Developer> devs = Arrays.asList(
-                new Developer("Messi", "Lead Dev", "/project/app/humanelogistics/picture1.jpg"),
-                new Developer("Ronaldo", "UI Designer", "/project/app/humanelogistics/picture2.jpg")
+                new Developer("Team Lead", "Backend & Analysis", "/project/app/humanelogistics/picture1.jpg"),
+                new Developer("UI Designer", "Frontend & UX", "/project/app/humanelogistics/picture2.jpg")
         );
         view.showDevelopers(devs);
     }
 
     private void handleShowSentimentAnalysis() {
         updateActiveButton(sentimentButton);
-        view.showLoading("Analyzing sentiment data for " + TOPIC_NAME + "...");
+        view.showLoading("Analyzing sentiment counts for " + TOPIC_NAME + "...");
 
         Task<File> task = new Task<>() {
             @Override
             protected File call() throws Exception {
+                // Fetch data and generate chart
                 TimeSeriesCollection dataset = model.getSentimentData(TOPIC_NAME, 2024);
                 return chartService.generateAndSaveChart(
-                        TOPIC_NAME + ": Sentiment Trend", "Date", "Score", dataset, CHART_FILE_PATH
+                        TOPIC_NAME + ": Positive vs Negative", "Date", "Number of Posts", dataset, CHART_FILE_PATH
                 );
             }
         };
 
-        task.setOnSucceeded(e -> view.showChart("Sentiment Analysis Report", task.getValue()));
-        task.setOnFailed(e -> {
-            task.getException().printStackTrace();
-            view.showError(task.getException().getMessage());
-        });
+        task.setOnSucceeded(e -> view.showChart("Sentiment Analysis: Post Volume", task.getValue()));
+        task.setOnFailed(e -> view.showError("Failed to generate chart: " + e.getSource().getException().getMessage()));
 
         new Thread(task).start();
     }

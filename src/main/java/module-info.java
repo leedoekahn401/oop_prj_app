@@ -7,6 +7,10 @@ module project.app.humanelogistics {
     requires org.mongodb.driver.sync.client;
     requires org.mongodb.bson;
     requires org.mongodb.driver.core;
+    requires java.net.http;
+
+    // Grant access to the Google GenAI SDK
+    requires google.genai;
 
     opens project.app.humanelogistics to javafx.fxml;
     exports project.app.humanelogistics;

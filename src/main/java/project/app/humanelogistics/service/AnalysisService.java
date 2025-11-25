@@ -3,7 +3,7 @@ package project.app.humanelogistics.service;
 import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
-import project.app.humanelogistics.db.PostRepository;
+import project.app.humanelogistics.db.MongoPostRepository;
 import project.app.humanelogistics.model.SocialPost;
 
 import java.time.LocalDate;
@@ -15,10 +15,10 @@ import java.util.TreeMap;
 
 public class AnalysisService {
 
-    private final PostRepository repository;
+    private final MongoPostRepository repository;
     private final SentimentAnalyzer analyzer;
 
-    public AnalysisService(PostRepository repository, SentimentAnalyzer analyzer) {
+    public AnalysisService(MongoPostRepository repository, SentimentAnalyzer analyzer) {
         this.repository = repository;
         this.analyzer = analyzer;
     }

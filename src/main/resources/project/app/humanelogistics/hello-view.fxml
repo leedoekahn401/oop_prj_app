@@ -13,104 +13,53 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<StackPane fx:id="rootPane" prefHeight="874.0" prefWidth="1211.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="project.app.humanelogistics.controller.DashBoardController">
+<StackPane fx:id="rootPane" prefHeight="874.0" prefWidth="1211.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="project.app.humanelogistics.controller.DashBoardController">
 
     <BorderPane>
-
         <!-- SIDEBAR -->
         <left>
             <VBox fx:id="leftBox" prefWidth="240.0" styleClass="sidebar">
-                <!-- Header -->
                 <HBox alignment="CENTER_LEFT" spacing="15" styleClass="sidebar-header">
                     <padding><Insets bottom="30" left="20" right="20" top="30" /></padding>
                     <ImageView fx:id="imgLogo" fitHeight="32" fitWidth="32" preserveRatio="true" />
                     <Label styleClass="app-title" text="HumaneLogistics" />
                 </HBox>
 
-                <!-- Nav Buttons -->
                 <VBox spacing="8" VBox.vgrow="ALWAYS">
                     <padding><Insets left="15" right="15" top="10" /></padding>
-
                     <Button fx:id="homeButton" maxWidth="Infinity" styleClass="nav-button, active" text="🏠  Dashboard" />
                     <Button fx:id="sentimentButton" maxWidth="Infinity" styleClass="nav-button" text="📊  Sentiment Analysis" />
                     <Button maxWidth="Infinity" styleClass="nav-button" text="📦  Inventory" />
-                    <Button maxWidth="Infinity" styleClass="nav-button" text="🚚  Shipments" />
                 </VBox>
 
-                <!-- Bottom Actions -->
                 <VBox spacing="8">
                     <padding><Insets bottom="30" left="15" right="15" /></padding>
                     <Button fx:id="informationButton" maxWidth="Infinity" styleClass="nav-button-secondary" text="ℹ  Help &amp; Info" />
-                    <Button maxWidth="Infinity" styleClass="nav-button-secondary" text="⚙  Settings" />
                 </VBox>
             </VBox>
         </left>
 
-        <!-- TOP BAR -->
-        <top>
-            <HBox fx:id="topBox" alignment="CENTER_LEFT" prefHeight="70.0" prefWidth="1003.0" spacing="20.0" styleClass="top-bar">
-                <padding><Insets left="25" right="25" /></padding>
-
-                <!-- Spacer to push User Profile to the right -->
-                <Pane HBox.hgrow="ALWAYS" />
-
-                <!-- User Profile -->
-                <HBox alignment="CENTER" spacing="15">
-                    <VBox alignment="CENTER_RIGHT">
-                        <Label styleClass="user-name" text="Admin User" />
-                        <Label styleClass="user-role" text="Logistics Manager" />
-                    </VBox>
-                    <Circle fill="#E67E22" radius="20.0" stroke="WHITE" strokeWidth="2" />
-                </HBox>
-            </HBox>
-        </top>
-
         <!-- MAIN CONTENT -->
         <center>
-            <ScrollPane fitToWidth="true" prefHeight="899.0" prefWidth="953.0" styleClass="main-scroll">
+            <ScrollPane fitToWidth="true" styleClass="main-scroll">
                 <VBox fx:id="mainContent" spacing="25">
                     <padding><Insets bottom="40" left="40" right="40" top="40" /></padding>
 
                     <Label styleClass="section-header" text="Dashboard Overview" />
 
-                    <!-- Stats Cards -->
-                    <TilePane alignment="CENTER" hgap="25" prefColumns="3" vgap="25">
+                    <TilePane alignment="CENTER_LEFT" hgap="25" prefColumns="3" vgap="25">
                         <VBox styleClass="card">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Label styleClass="card-icon" text="📦" />
-                                <Label styleClass="card-title" text="Total Shipments" />
-                            </HBox>
-                            <Label alignment="CENTER" prefHeight="50.0" prefWidth="146.0" styleClass="card-value" text="0" />
-                            <Label styleClass="card-subtitle, positive" />
+                            <Label styleClass="card-title" text="Total Posts" />
+                            <Label styleClass="card-value" text="Loading..." />
                         </VBox>
-
                         <VBox styleClass="card">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Label styleClass="card-icon" text="📊" />
-                                <Label styleClass="card-title" text="Sentiment Score" />
-                            </HBox>
-                            <Label alignment="CENTER" prefHeight="50.0" prefWidth="145.0" styleClass="card-value" text="8.4" />
-                            <Label alignment="CENTER" prefHeight="15.0" prefWidth="143.0" styleClass="card-subtitle, positive" text="Positive Trend" />
-                        </VBox>
-
-                        <VBox styleClass="card">
-                            <HBox alignment="CENTER_LEFT" spacing="10">
-                                <Label styleClass="card-icon" text="⚠" />
-                                <Label styleClass="card-title" text="Pending Requests" />
-                            </HBox>
-                            <Label alignment="CENTER" contentDisplay="CENTER" prefHeight="50.0" prefWidth="148.0" styleClass="card-value" text="12" />
-                            <Label styleClass="card-subtitle, negative" />
+                            <Label styleClass="card-title" text="Sentiment Trend" />
+                            <Label styleClass="card-value" text="Positive" />
+                            <Label styleClass="card-subtitle, positive" text="+12% vs last week" />
                         </VBox>
                     </TilePane>
-
-                    <!-- Activity Section -->
-                    <Label styleClass="section-header" text="Recent Activity" />
-                    <VBox minHeight="300" styleClass="card">
-                        <Label text="Graph or Table Placeholder..." textFill="#bdc3c7" />
-                    </VBox>
                 </VBox>
             </ScrollPane>
         </center>
     </BorderPane>
-
 </StackPane>
