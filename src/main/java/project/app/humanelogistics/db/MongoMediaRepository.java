@@ -5,10 +5,8 @@ import org.bson.Document;
 import project.app.humanelogistics.model.Media;
 import project.app.humanelogistics.model.News;
 import project.app.humanelogistics.model.SocialPost;
-
 import java.util.ArrayList;
 import java.util.List;
-
 
 public class MongoMediaRepository implements MediaRepository {
     private final MongoCollection<Document> collection;
@@ -19,19 +17,21 @@ public class MongoMediaRepository implements MediaRepository {
             MongoDatabase db = client.getDatabase(dbName);
             this.collection = db.getCollection(collName);
         } catch (Exception e) {
+            System.err.println("Database connection failed: " + e.getMessage());
             throw new RuntimeException("Failed to connect to MongoDB", e);
         }
     }
 
     @Override
     public void save(Media item) {
-        // 1. Save common fields (from Media parent)
+        if(findByContent(item.getContent())) return; // Deduplicate
+
         Document doc = new Document("topic", item.getTopic())
                 .append("content", item.getContent())
                 .append("timestamp", item.getTimestamp())
                 .append("sentiment", item.getSentiment());
 
-        // 2. Save specific fields based on the actual object type (Polymorphism)
+        // Polymorphic saving
         if (item instanceof News) {
             News news = (News) item;
             doc.append("source", news.getSource());
@@ -41,14 +41,20 @@ public class MongoMediaRepository implements MediaRepository {
             SocialPost post = (SocialPost) item;
             doc.append("comments", post.getComments());
             doc.append("type", "social_post");
+        } else {
+            // SAFE FALLBACK for generic Media types (e.g. YouTube Video if not defined as SocialPost)
+            doc.append("type", "generic");
         }
 
         collection.insertOne(doc);
     }
 
+    private boolean findByContent(String content) {
+        return collection.find(new Document("content", content)).first() != null;
+    }
+
     @Override
     public void updateSentiment(Media item, String sentiment) {
-        // Find by content + topic to update the sentiment field
         collection.updateOne(
                 new Document("content", item.getContent()).append("topic", item.getTopic()),
                 new Document("$set", new Document("sentiment", sentiment))
@@ -64,9 +70,9 @@ public class MongoMediaRepository implements MediaRepository {
             FindIterable<Document> docs = collection.find(new Document("topic", topic));
             for (Document doc : docs) {
                 String type = doc.getString("type");
+                if(type == null) type = "news";
 
                 if ("news".equals(type)) {
-                    // Reconstruct News object
                     items.add(new News(
                             doc.getString("topic"),
                             doc.getString("content"),
@@ -76,7 +82,7 @@ public class MongoMediaRepository implements MediaRepository {
                             doc.getString("sentiment")
                     ));
                 } else {
-                    // Reconstruct SocialPost object
+                    // Treat "social_post" and "generic" as SocialPost for now
                     items.add(new SocialPost(
                             doc.getString("topic"),
                             doc.getString("content"),
@@ -90,10 +96,5 @@ public class MongoMediaRepository implements MediaRepository {
             e.printStackTrace();
         }
         return items;
-    }
-
-    // Optional: Delete items with null sentiment
-    public void deleteItemsWithNullSentiment() {
-        collection.deleteMany(new Document("sentiment", null));
     }
 }

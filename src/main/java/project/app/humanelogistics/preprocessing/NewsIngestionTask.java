@@ -18,7 +18,7 @@ public class NewsIngestionTask {
         MediaRepository newsRepo = new MongoMediaRepository(dbConn, "storm_data", "news");
 
         // 2. COLLECT
-        // We use the GoogleNewsCollector which returns a list of MediaItems (specifically News objects)
+        // We use the GoogleNewsCollector which returns a list of Medias (specifically News objects)
         DataCollector collector = new GoogleNewsCollector();
 
         String query = "Typhoon Yagi Bão Yagi Vietnam news";
@@ -30,7 +30,7 @@ public class NewsIngestionTask {
         System.out.println("Query: " + query);
 
         // Collect data
-        List<MediaItem> articles = collector.collect(query, startDate, endDate, 3);
+        List<Media> articles = collector.collect(query, startDate, endDate, 3);
         System.out.println("Fetched " + articles.size() + " articles.");
 
         // 3. SAVE
@@ -38,7 +38,7 @@ public class NewsIngestionTask {
         // The repository handles the details of writing to MongoDB.
         System.out.println("Saving to MongoDB...");
         int savedCount = 0;
-        for (MediaItem article : articles) {
+        for (Media article : articles) {
             try {
                 newsRepo.save(article);
                 savedCount++;
