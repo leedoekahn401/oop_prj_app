@@ -6,9 +6,9 @@ public abstract class Media {
     protected String topic;
     protected String content;
     protected Date timestamp;
-    protected String sentiment;
+    protected double sentiment;
 
-    public Media(String topic, String content, Date timestamp, String sentiment) {
+    public Media(String topic, String content, Date timestamp, double sentiment) {
         this.topic = topic;
         this.content = content;
         this.timestamp = timestamp;
@@ -19,6 +19,6 @@ public abstract class Media {
     public String getTopic() { return topic; }
     public String getContent() { return content; }
     public Date getTimestamp() { return timestamp; }
-    public String getSentiment() { return sentiment; }
-    public void setSentiment(String sentiment) { this.sentiment = sentiment; }
+    public double getSentiment() { return sentiment; }
+    public void setSentiment(double sentiment) { this.sentiment = sentiment; }
 }

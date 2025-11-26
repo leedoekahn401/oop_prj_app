@@ -3,7 +3,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 .kotlin
-.env
+src/main/java/project/app/humanelogistics/.env
 ### IntelliJ IDEA ###
 .idea/modules.xml
 .idea/jarRepositories.xml

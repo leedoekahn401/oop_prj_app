@@ -24,14 +24,13 @@ public class MongoMediaRepository implements MediaRepository {
 
     @Override
     public void save(Media item) {
-        if(findByContent(item.getContent())) return; // Deduplicate
+        if(findByContent(item.getContent())) return;
 
         Document doc = new Document("topic", item.getTopic())
                 .append("content", item.getContent())
                 .append("timestamp", item.getTimestamp())
                 .append("sentiment", item.getSentiment());
 
-        // Polymorphic saving
         if (item instanceof News) {
             News news = (News) item;
             doc.append("source", news.getSource());
@@ -42,7 +41,6 @@ public class MongoMediaRepository implements MediaRepository {
             doc.append("comments", post.getComments());
             doc.append("type", "social_post");
         } else {
-            // SAFE FALLBACK for generic Media types (e.g. YouTube Video if not defined as SocialPost)
             doc.append("type", "generic");
         }
 
@@ -54,7 +52,7 @@ public class MongoMediaRepository implements MediaRepository {
     }
 
     @Override
-    public void updateSentiment(Media item, String sentiment) {
+    public void updateSentiment(Media item, Double sentiment) {
         collection.updateOne(
                 new Document("content", item.getContent()).append("topic", item.getTopic()),
                 new Document("$set", new Document("sentiment", sentiment))
@@ -72,6 +70,16 @@ public class MongoMediaRepository implements MediaRepository {
                 String type = doc.getString("type");
                 if(type == null) type = "news";
 
+                Double sentiment = null;
+                try {
+                    sentiment = doc.get("sentiment", Double.class);
+                } catch (Exception e) {
+                    try {
+                        String s = doc.getString("sentiment");
+                        if (s != null) sentiment = Double.parseDouble(s);
+                    } catch (Exception ignored) {}
+                }
+
                 if ("news".equals(type)) {
                     items.add(new News(
                             doc.getString("topic"),
@@ -79,16 +87,15 @@ public class MongoMediaRepository implements MediaRepository {
                             doc.getString("source"),
                             doc.getDate("timestamp"),
                             doc.getString("url"),
-                            doc.getString("sentiment")
+                            sentiment
                     ));
                 } else {
-                    // Treat "social_post" and "generic" as SocialPost for now
                     items.add(new SocialPost(
                             doc.getString("topic"),
                             doc.getString("content"),
                             doc.getDate("timestamp"),
                             doc.getList("comments", String.class),
-                            doc.getString("sentiment")
+                            sentiment
                     ));
                 }
             }

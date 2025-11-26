@@ -16,7 +16,6 @@ import project.app.humanelogistics.Config;
 import project.app.humanelogistics.db.MongoMediaRepository;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.model.Developer;
-import project.app.humanelogistics.preprocessing.GoogleNewsCollector;
 import project.app.humanelogistics.preprocessing.SentimentGrade;
 import project.app.humanelogistics.service.AnalysisService;
 import project.app.humanelogistics.service.ChartService;
@@ -46,14 +45,19 @@ public class DashBoardController {
 
     @FXML
     public void initialize() {
-        MediaRepository repo = new MongoMediaRepository(Config.getDbConnectionString(), "storm_data", "posts");
+        String dbConn = Config.getDbConnectionString();
 
-        // Initialize Service
-        this.model = new AnalysisService(repo, new SentimentGrade());
+        // 1. Initialize Repositories
+        MediaRepository newsRepo = new MongoMediaRepository(dbConn, "storm_data", "news");
+        MediaRepository socialRepo = new MongoMediaRepository(dbConn, "storm_data", "posts");
 
-        // === REGISTER DATA SOURCES HERE ===
-        this.model.addCollector(new GoogleNewsCollector());
-        //
+        // 2. Initialize Service
+        this.model = new AnalysisService(new SentimentGrade());
+
+        // 3. Register Repositories with Explicit Names
+        // This ensures the lines on the chart are labeled correctly regardless of data type
+        this.model.addRepository("News", newsRepo);
+        this.model.addRepository("Social Posts", socialRepo);
 
         this.chartService = new ChartService();
         loadLogo();
@@ -64,19 +68,18 @@ public class DashBoardController {
 
         this.view = new DashboardView(mainContent, backup);
         setupNavigation();
+
         refreshDashboardStats();
     }
 
     private void refreshDashboardStats() {
         if(lblTotalPosts == null) return;
-        lblTotalPosts.setText("Updating...");
+        lblTotalPosts.setText("Loading...");
 
         Task<Void> task = new Task<>() {
             @Override
             protected Void call() {
-                model.processMissingSentiments(TOPIC_NAME);
-                model.processNewData(TOPIC_NAME);
-
+                // Pure Read-Only Operations (Aggregates from News + Posts)
                 int total = model.getTotalPostCount(TOPIC_NAME);
                 double avg = model.getOverallAverageScore(TOPIC_NAME);
 

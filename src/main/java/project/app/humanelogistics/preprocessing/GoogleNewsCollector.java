@@ -97,7 +97,7 @@ public class GoogleNewsCollector implements DataCollector {
             // We assign the 'forceDate' (the date we queried for) to ensure accuracy.
 
             if(!title.isEmpty() && !link.isEmpty()) {
-                posts.add(new News(topic, title, source, forceDate, link, null));
+                posts.add(new News(topic, title, source, forceDate, link, 0.0));
             }
         }
         return posts;
@@ -108,9 +108,9 @@ public class GoogleNewsCollector implements DataCollector {
         long now = System.currentTimeMillis();
         long day = 24 * 60 * 60 * 1000L;
 
-        mocks.add(new News(topic, "Typhoon Yagi damage report", "BBC", new Date(now - 2 * day), "http://bbc.com", "-0.8"));
-        mocks.add(new News(topic, "Recovery efforts start", "CNN", new Date(now - day), "http://cnn.com", "0.5"));
-        mocks.add(new News(topic, "Flood warnings update", "VNExpress", new Date(now - 4 * 3600 * 1000L), "http://vnexpress.net", "-0.6"));
+        mocks.add(new News(topic, "Typhoon Yagi damage report", "BBC", new Date(now - 2 * day), "http://bbc.com", -0.8));
+        mocks.add(new News(topic, "Recovery efforts start", "CNN", new Date(now - day), "http://cnn.com", 0.5));
+        mocks.add(new News(topic, "Flood warnings update", "VNExpress", new Date(now - 4 * 3600 * 1000L), "http://vnexpress.net", -0.6));
         return mocks;
     }
 }

@@ -5,8 +5,7 @@ import java.util.List;
 
 public interface MediaRepository {
     void save(Media item);
-    void updateSentiment(Media item, String sentiment);
-
-    // FIX: Renamed to match the implementation in MongoMediaRepository
+    // CHANGED: String -> Double to match implementation
+    void updateSentiment(Media item, Double sentiment);
     List<Media> findByTopic(String topic);
 }
