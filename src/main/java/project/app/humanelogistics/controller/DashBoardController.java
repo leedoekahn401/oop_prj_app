@@ -1,21 +1,23 @@
 package project.app.humanelogistics.controller;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 
 import org.jfree.data.time.TimeSeriesCollection;
-import project.app.humanelogistics.db.MongoPostRepository;
-import project.app.humanelogistics.db.PostRepository;
+import project.app.humanelogistics.db.MongoMediaRepository;
+import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.model.Developer;
+import project.app.humanelogistics.preprocessing.SentimentGrade;
 import project.app.humanelogistics.service.AnalysisService;
 import project.app.humanelogistics.service.ChartService;
-import project.app.humanelogistics.service.KeywordSentimentAnalyzer;
 import project.app.humanelogistics.view.DashboardView;
 
 import java.io.File;
@@ -25,9 +27,8 @@ import java.util.List;
 public class DashBoardController {
 
     private static final String TOPIC_NAME = "Typhoon Yagi";
-    private static final String CHART_FILE_PATH = "sentiment_chart.png";
-
-    // You should move this to a secure config file in a real app
+    private static final String CHART_FILE_PATH = "sentiment_score_chart.png";
+    // NOTE: In a real app, do not hardcode credentials.
     private static final String DB_CONN = "mongodb+srv://ducanh4012006_db_user:5zEVVC3o7Sjnl2le@cluster0.dwzpibi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
     @FXML private VBox mainContent;
@@ -36,17 +37,19 @@ public class DashBoardController {
     @FXML private Button sentimentButton;
     @FXML private Button homeButton;
 
+    // INJECTED LABELS
+    @FXML private Label lblTotalPosts;
+    @FXML private Label lblSentimentScore;
+    @FXML private Label lblSentimentLabel;
+
     private AnalysisService model;
     private ChartService chartService;
     private DashboardView view;
 
     @FXML
     public void initialize() {
-        // Dependency Injection - Easy to swap MongoPostRepository for SQLPostRepository
-        PostRepository repo = new MongoPostRepository(DB_CONN, "storm_data", "posts");
-
-        // Use KeywordAnalyzer (loads from JSON)
-        this.model = new AnalysisService(repo, new KeywordSentimentAnalyzer());
+        MediaRepository repo = new MongoMediaRepository(DB_CONN, "storm_data", "posts");
+        this.model = new AnalysisService(repo, new SentimentGrade());
         this.chartService = new ChartService();
 
         loadLogo();
@@ -56,7 +59,49 @@ public class DashBoardController {
                 : FXCollections.<Node>emptyObservableList();
 
         this.view = new DashboardView(mainContent, backup);
+
         setupNavigation();
+
+        // IMMEDIATE ACTION: Fetch and display stats
+        refreshDashboardStats();
+    }
+
+    private void refreshDashboardStats() {
+        // Run database fetch in a background thread to keep UI snappy
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() {
+                // 1. Calculations
+                int total = model.getTotalPostCount(TOPIC_NAME);
+                double avg = model.getOverallAverageScore(TOPIC_NAME);
+
+                // 2. Update UI (Must be on JavaFX Application Thread)
+                Platform.runLater(() -> {
+                    if (lblTotalPosts != null) {
+                        lblTotalPosts.setText(String.valueOf(total));
+                    }
+
+                    if (lblSentimentScore != null) {
+                        lblSentimentScore.setText(String.format("%.2f", avg));
+                    }
+
+                    if (lblSentimentLabel != null) {
+                        if (avg > 0.1) {
+                            lblSentimentLabel.setText("Positive");
+                            lblSentimentLabel.setStyle("-fx-text-fill: #27AE60; -fx-font-weight: bold;"); // Green
+                        } else if (avg < -0.1) {
+                            lblSentimentLabel.setText("Negative");
+                            lblSentimentLabel.setStyle("-fx-text-fill: #C0392B; -fx-font-weight: bold;"); // Red
+                        } else {
+                            lblSentimentLabel.setText("Neutral");
+                            lblSentimentLabel.setStyle("-fx-text-fill: #7F8C8D; -fx-font-weight: bold;"); // Grey
+                        }
+                    }
+                });
+                return null;
+            }
+        };
+        new Thread(task).start();
     }
 
     private void setupNavigation() {
@@ -68,6 +113,8 @@ public class DashBoardController {
     private void handleShowDashboard() {
         updateActiveButton(homeButton);
         view.showDefault();
+        // Refresh stats when user returns to home screen
+        refreshDashboardStats();
     }
 
     private void handleShowInfo() {
@@ -81,22 +128,28 @@ public class DashBoardController {
 
     private void handleShowSentimentAnalysis() {
         updateActiveButton(sentimentButton);
-        view.showLoading("Analyzing sentiment counts for " + TOPIC_NAME + "...");
+        view.showLoading("Generating Sentiment Chart (Using Cached Data)...");
 
         Task<File> task = new Task<>() {
             @Override
             protected File call() throws Exception {
-                // Fetch data and generate chart
+                // Pure DB retrieval, no analysis loop
                 TimeSeriesCollection dataset = model.getSentimentData(TOPIC_NAME, 2024);
                 return chartService.generateAndSaveChart(
-                        TOPIC_NAME + ": Positive vs Negative", "Date", "Number of Posts", dataset, CHART_FILE_PATH
+                        TOPIC_NAME + ": Average Sentiment Trend",
+                        "Date",
+                        "Score (-1.0 to 1.0)",
+                        dataset,
+                        CHART_FILE_PATH
                 );
             }
         };
 
-        task.setOnSucceeded(e -> view.showChart("Sentiment Analysis: Post Volume", task.getValue()));
-        task.setOnFailed(e -> view.showError("Failed to generate chart: " + e.getSource().getException().getMessage()));
-
+        task.setOnSucceeded(e -> view.showChart("Sentiment Analysis: Average Score", task.getValue()));
+        task.setOnFailed(e -> {
+            e.getSource().getException().printStackTrace();
+            view.showError("Failed to generate chart: " + e.getSource().getException().getMessage());
+        });
         new Thread(task).start();
     }
 
