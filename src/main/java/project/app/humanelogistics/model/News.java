@@ -3,16 +3,14 @@ package project.app.humanelogistics.model;
 import java.util.Date;
 
 public class News extends Media {
-    private String source; // e.g., "BBC", "CNN"
-    private String url;
+    private String source;
+    // URL removed from here, inherited from Media
 
-    public News(String topic, String title, String source, Date timestamp, String url, double sentiment) {
-        // For news, the "content" usually starts with the title
-        super(topic, title, timestamp, sentiment);
+    public News(String topic, String title, String source, Date timestamp, String url, Double sentiment) {
+
+        super(topic, title, timestamp, sentiment, url);
         this.source = source;
-        this.url = url;
     }
 
     public String getSource() { return source; }
-    public String getUrl() { return url; }
 }

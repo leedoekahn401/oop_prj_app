@@ -26,19 +26,22 @@ public class MongoMediaRepository implements MediaRepository {
     public void save(Media item) {
         if(findByContent(item.getContent())) return;
 
+        // Save common fields including URL
         Document doc = new Document("topic", item.getTopic())
                 .append("content", item.getContent())
                 .append("timestamp", item.getTimestamp())
-                .append("sentiment", item.getSentiment());
+                .append("sentiment", item.getSentiment())
+                .append("url", item.getUrl()); // Common field
 
         if (item instanceof News) {
             News news = (News) item;
             doc.append("source", news.getSource());
-            doc.append("url", news.getUrl());
+            // url is already added above
             doc.append("type", "news");
         } else if (item instanceof SocialPost) {
             SocialPost post = (SocialPost) item;
             doc.append("comments", post.getComments());
+            // url is already added above
             doc.append("type", "social_post");
         } else {
             doc.append("type", "generic");
@@ -80,13 +83,16 @@ public class MongoMediaRepository implements MediaRepository {
                     } catch (Exception ignored) {}
                 }
 
+                // Retrieve common URL
+                String url = doc.getString("url");
+
                 if ("news".equals(type)) {
                     items.add(new News(
                             doc.getString("topic"),
                             doc.getString("content"),
                             doc.getString("source"),
                             doc.getDate("timestamp"),
-                            doc.getString("url"),
+                            url, // Pass URL
                             sentiment
                     ));
                 } else {
@@ -95,7 +101,8 @@ public class MongoMediaRepository implements MediaRepository {
                             doc.getString("content"),
                             doc.getDate("timestamp"),
                             doc.getList("comments", String.class),
-                            sentiment
+                            sentiment,
+                            url // Pass URL
                     ));
                 }
             }
