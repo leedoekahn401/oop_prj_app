@@ -15,17 +15,18 @@ import java.util.*;
 
 public class AnalysisService {
 
-    // CHANGED: Use a LinkedHashMap to keep the order (News first, then Social) and store names
+    // Map<RepositoryLabel, RepositoryObject>
+    // e.g. "News" -> MongoMediaRepository(news)
+    //      "Social Posts" -> MongoMediaRepository(posts)
     private final Map<String, MediaRepository> repoMap = new LinkedHashMap<>();
+
     private final SentimentAnalyzer analyzer;
     private final List<DataCollector> collectors = new ArrayList<>();
 
-    // CHANGED: Constructor is cleaner now
     public AnalysisService(SentimentAnalyzer analyzer) {
         this.analyzer = analyzer;
     }
 
-    // NEW: Add repository with a specific label (e.g., "News", "Social Posts")
     public void addRepository(String label, MediaRepository repo) {
         this.repoMap.put(label, repo);
     }
@@ -63,7 +64,7 @@ public class AnalysisService {
             System.out.println("Fetching from source: " + collector.getClass().getSimpleName());
             List<Media> freshData = collector.collect(topic, startDate, endDate, 1);
             for(Media item : freshData) {
-                // Default: Save to the first registered repository (usually News)
+                // Save to the first registered repository by default (usually "News")
                 if (!repoMap.isEmpty()) {
                     repoMap.values().iterator().next().save(item);
                 }
@@ -132,21 +133,22 @@ public class AnalysisService {
         return count == 0 ? 0.0 : totalScore / count;
     }
 
-    // UPDATED: Generates series based on REPOSITORY NAME (News vs Social Posts)
-    // This fixes the issue of mixed-up types in the database.
+    // FIX: Generate separate series for each repository in repoMap
     public TimeSeriesCollection getSentimentData(String topic, int targetYear) {
         TimeSeriesCollection dataset = new TimeSeriesCollection();
 
-        // Iterate through each named repository (News, Social Posts)
+        // Loop through "News", "Social Posts", etc.
         for (Map.Entry<String, MediaRepository> entry : repoMap.entrySet()) {
-            String categoryName = entry.getKey(); // "News" or "Social Posts"
+            String seriesName = entry.getKey();
             MediaRepository repo = entry.getValue();
 
             List<Media> posts = repo.findByTopic(topic);
 
-            // Temporary storage for averages
+            // Map<Date, TotalScore>
             Map<LocalDate, Double> dailyTotal = new TreeMap<>();
             Map<LocalDate, Integer> dailyCount = new HashMap<>();
+
+            boolean hasData = false;
 
             for (Media post : posts) {
                 if (post.getTimestamp() == null) continue;
@@ -158,20 +160,20 @@ public class AnalysisService {
                 double score = post.getSentiment();
                 dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + score);
                 dailyCount.put(localDate, dailyCount.getOrDefault(localDate, 0) + 1);
+                hasData = true;
             }
 
-            // Create the line for this specific repository
-            TimeSeries series = new TimeSeries(categoryName);
+            // Create series for this repo
+            TimeSeries series = new TimeSeries(seriesName);
             for (LocalDate date : dailyTotal.keySet()) {
                 double avg = dailyTotal.get(date) / dailyCount.get(date);
                 series.addOrUpdate(new Day(date.getDayOfMonth(), date.getMonthValue(), date.getYear()), avg);
             }
 
-            // Only add the line if it has data (or you can force it if you want empty lines)
-            if (!series.isEmpty()) {
+            if (hasData) {
                 dataset.addSeries(series);
             } else {
-                System.out.println("Warning: No data found for category: " + categoryName);
+                System.out.println("Warning: No valid sentiment data found for '" + seriesName + "'");
             }
         }
 
