@@ -27,14 +27,14 @@
 
                 <VBox spacing="8" VBox.vgrow="ALWAYS">
                     <padding><Insets left="15" right="15" top="10" /></padding>
-                    <Button fx:id="homeButton" maxWidth="Infinity" styleClass="nav-button, active" text="匠  Dashboard" />
-                    <Button fx:id="sentimentButton" maxWidth="Infinity" styleClass="nav-button" text="投  Sentiment Analysis" />
-                    <Button fx:id="inventoryButton" maxWidth="Infinity" styleClass="nav-button" text="逃  Damage Analysis" />
+                    <Button fx:id="homeButton" maxWidth="Infinity" styleClass="nav-button, active" text="Dashboard" />
+                    <Button fx:id="sentimentButton" maxWidth="Infinity" styleClass="nav-button" text="Sentiment Analysis" />
+                    <Button fx:id="inventoryButton" maxWidth="Infinity" styleClass="nav-button" text="Damage Analysis" />
                 </VBox>
 
                 <VBox spacing="8">
                     <padding><Insets bottom="30" left="15" right="15" /></padding>
-                    <Button fx:id="informationButton" maxWidth="Infinity" styleClass="nav-button-secondary" text="邃ｹ  Help &amp; Info" />
+                    <Button fx:id="informationButton" maxWidth="Infinity" styleClass="nav-button-secondary" text="Help &amp; Info" />
                 </VBox>
             </VBox>
         </left>

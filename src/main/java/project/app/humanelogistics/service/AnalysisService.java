@@ -196,7 +196,6 @@ public class AnalysisService {
             List<Media> posts = repo.findByTopic(topic);
             for (Media post : posts) {
                 DamageCategory type = post.getDamageType();
-                // Filter Logic: Skip if null or UNKNOWN
                 if (type != null && type != DamageCategory.UNKNOWN) {
                     counts.put(type, counts.getOrDefault(type, 0) + 1);
                 }

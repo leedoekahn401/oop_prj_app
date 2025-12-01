@@ -40,7 +40,7 @@ public class GeminiDamageClassifier implements ContentClassifier {
                     "Text: " + safeText;
 
             GenerateContentResponse response = client.models.generateContent(
-                    "gemini-2.0-flash",
+                    "gemini-2.5-flash",
                     prompt,
                     null
             );
