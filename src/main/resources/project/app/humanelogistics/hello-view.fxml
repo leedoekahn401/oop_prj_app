@@ -7,90 +7,67 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.TilePane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.layout.FlowPane?>
-<?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.shape.Circle?>
 
-<StackPane fx:id="rootPane" prefHeight="800.0" prefWidth="1200.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="project.app.humanelogistics.controller.DashBoardController">
+<StackPane fx:id="rootPane" prefHeight="874.0" prefWidth="1211.0" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="project.app.humanelogistics.controller.DashBoardController">
 
     <BorderPane>
+        <!-- SIDEBAR -->
         <left>
-            <VBox fx:id="leftBox" prefWidth="260.0" styleClass="sidebar">
+            <VBox fx:id="leftBox" prefWidth="240.0" styleClass="sidebar">
                 <HBox alignment="CENTER_LEFT" spacing="15" styleClass="sidebar-header">
+                    <padding><Insets bottom="30" left="20" right="20" top="30" /></padding>
                     <ImageView fx:id="imgLogo" fitHeight="32" fitWidth="32" preserveRatio="true" />
                     <Label styleClass="app-title" text="HumaneLogistics" />
                 </HBox>
 
-                <VBox spacing="5" VBox.vgrow="ALWAYS">
-                    <padding><Insets top="20" right="15"/></padding>
-
-                    <Button fx:id="homeButton" maxWidth="Infinity" styleClass="nav-button, active" graphicTextGap="15" text="Dashboard">
-                        <graphic>
-                            <SVGPath content="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" styleClass="nav-icon" scaleX="0.8" scaleY="0.8"/>
-                        </graphic>
-                    </Button>
-
-                    <Button fx:id="sentimentButton" maxWidth="Infinity" styleClass="nav-button" graphicTextGap="15" text="Sentiment Analysis">
-                        <graphic>
-                            <SVGPath content="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z" styleClass="nav-icon" scaleX="0.8" scaleY="0.8"/>
-                        </graphic>
-                    </Button>
-
-                    <Button maxWidth="Infinity" styleClass="nav-button" graphicTextGap="15" text="Inventory">
-                        <graphic>
-                            <SVGPath content="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z" styleClass="nav-icon" scaleX="0.8" scaleY="0.8"/>
-                        </graphic>
-                    </Button>
+                <VBox spacing="8" VBox.vgrow="ALWAYS">
+                    <padding><Insets left="15" right="15" top="10" /></padding>
+                    <Button fx:id="homeButton" maxWidth="Infinity" styleClass="nav-button, active" text="匠  Dashboard" />
+                    <Button fx:id="sentimentButton" maxWidth="Infinity" styleClass="nav-button" text="投  Sentiment Analysis" />
+                    <Button fx:id="inventoryButton" maxWidth="Infinity" styleClass="nav-button" text="逃  Damage Analysis" />
                 </VBox>
 
                 <VBox spacing="8">
                     <padding><Insets bottom="30" left="15" right="15" /></padding>
-                    <Button fx:id="informationButton" maxWidth="Infinity" styleClass="nav-button-secondary" graphicTextGap="10" text="About &amp; Info">
-                        <graphic>
-                            <SVGPath content="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z" fill="#7f8c8d" scaleX="0.9" scaleY="0.9"/>
-                        </graphic>
-                    </Button>
+                    <Button fx:id="informationButton" maxWidth="Infinity" styleClass="nav-button-secondary" text="邃ｹ  Help &amp; Info" />
                 </VBox>
             </VBox>
         </left>
 
+        <!-- MAIN CONTENT -->
         <center>
-            <ScrollPane fitToWidth="true" styleClass="main-scroll" hbarPolicy="NEVER">
-                <VBox fx:id="mainContent" spacing="30">
+            <ScrollPane fitToWidth="true" styleClass="main-scroll">
+                <VBox fx:id="mainContent" spacing="25">
                     <padding><Insets bottom="40" left="40" right="40" top="40" /></padding>
 
                     <Label styleClass="section-header" text="Dashboard Overview" />
 
-                    <FlowPane hgap="25" vgap="25">
-                        <VBox styleClass="card" minWidth="250">
-                            <HBox alignment="CENTER_LEFT" spacing="15">
-                                <StackPane style="-fx-background-color: #EBF5FB; -fx-padding: 10; -fx-background-radius: 50;">
-                                    <SVGPath content="M14 17H4v2h10v-2zm6-8H4v2h16V9zM4 15h16v-2H4v2zM4 5v2h16V5H4z" fill="#3498DB" scaleX="1.2" scaleY="1.2"/>
-                                </StackPane>
-                                <Label styleClass="card-title" text="Total Posts" />
-                            </HBox>
-                            <Label fx:id="lblTotalPosts" styleClass="card-value" text="..." >
-                                <padding><Insets top="15" /></padding>
-                            </Label>
+                    <TilePane alignment="CENTER_LEFT" hgap="25" prefColumns="3" vgap="25">
+                        <!-- CARD 1: TOTAL POSTS -->
+                        <VBox styleClass="card">
+                            <Label styleClass="card-title" text="Total Posts" />
+                            <Label fx:id="lblTotalPosts" styleClass="card-value" text="Loading..." />
                         </VBox>
 
-                        <VBox styleClass="card" minWidth="300">
-                            <HBox alignment="CENTER_LEFT" spacing="15">
-                                <StackPane style="-fx-background-color: #FDEDEC; -fx-padding: 10; -fx-background-radius: 50;">
-                                    <SVGPath content="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#E74C3C" scaleX="1.2" scaleY="1.2"/>
-                                </StackPane>
-                                <Label styleClass="card-title" text="Avg. Sentiment" />
-                            </HBox>
-
-                            <HBox alignment="BASELINE_LEFT" spacing="15">
-                                <padding><Insets top="15" /></padding>
-                                <Label fx:id="lblSentimentScore" styleClass="card-value" text="0.0" />
-                                <Label fx:id="lblSentimentLabel" styleClass="card-subtitle" text="Neutral" />
-                            </HBox>
+                        <!-- CARD 2: SENTIMENT SCORE -->
+                        <VBox styleClass="card">
+                            <Label styleClass="card-title" text="Avg. Sentiment Score" />
+                            <Label fx:id="lblSentimentScore" styleClass="card-value" text="0.0" />
+                            <Label fx:id="lblSentimentLabel" styleClass="card-subtitle" text="Neutral" />
                         </VBox>
-                    </FlowPane>
+
+                        <!-- CARD 3: TOP DAMAGE TYPE (The "Rightest" Column) -->
+                        <VBox styleClass="card">
+                            <Label styleClass="card-title" text="Top Damage Reported" />
+                            <Label fx:id="lblTopDamage" styleClass="card-value" text="-" style="-fx-font-size: 20px;"/>
+                            <Label fx:id="lblTopDamageCount" styleClass="card-subtitle" text="0 reports" />
+                        </VBox>
+                    </TilePane>
                 </VBox>
             </ScrollPane>
         </center>

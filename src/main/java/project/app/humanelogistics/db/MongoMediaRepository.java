@@ -2,6 +2,7 @@ package project.app.humanelogistics.db;
 
 import com.mongodb.client.*;
 import org.bson.Document;
+import project.app.humanelogistics.model.DamageCategory;
 import project.app.humanelogistics.model.Media;
 import project.app.humanelogistics.model.News;
 import project.app.humanelogistics.model.SocialPost;
@@ -26,22 +27,22 @@ public class MongoMediaRepository implements MediaRepository {
     public void save(Media item) {
         if(findByContent(item.getContent())) return;
 
-        // Save common fields including URL
+        // Base document with fields common to ALL Media (including URL now)
         Document doc = new Document("topic", item.getTopic())
                 .append("content", item.getContent())
+                .append("url", item.getUrl())
                 .append("timestamp", item.getTimestamp())
                 .append("sentiment", item.getSentiment())
-                .append("url", item.getUrl()); // Common field
+                .append("damageType", item.getDamageType().name());
 
+        // Type-specific fields
         if (item instanceof News) {
             News news = (News) item;
             doc.append("source", news.getSource());
-            // url is already added above
             doc.append("type", "news");
         } else if (item instanceof SocialPost) {
             SocialPost post = (SocialPost) item;
             doc.append("comments", post.getComments());
-            // url is already added above
             doc.append("type", "social_post");
         } else {
             doc.append("type", "generic");
@@ -62,6 +63,18 @@ public class MongoMediaRepository implements MediaRepository {
         );
     }
 
+    // NEW METHOD IMPLEMENTATION
+    @Override
+    public void updateAnalysis(Media item) {
+        collection.updateOne(
+                new Document("content", item.getContent()).append("topic", item.getTopic()),
+                new Document("$set", new Document()
+                        .append("sentiment", item.getSentiment())
+                        .append("damageType", item.getDamageType().name())
+                )
+        );
+    }
+
     @Override
     public List<Media> findByTopic(String topic) {
         List<Media> items = new ArrayList<>();
@@ -73,38 +86,43 @@ public class MongoMediaRepository implements MediaRepository {
                 String type = doc.getString("type");
                 if(type == null) type = "news";
 
-                Double sentiment = null;
-                try {
-                    sentiment = doc.get("sentiment", Double.class);
-                } catch (Exception e) {
-                    try {
-                        String s = doc.getString("sentiment");
-                        if (s != null) sentiment = Double.parseDouble(s);
-                    } catch (Exception ignored) {}
-                }
+                Double sentiment = 0.0;
+                Object sObj = doc.get("sentiment");
+                if (sObj instanceof Double) sentiment = (Double) sObj;
+                else if (sObj instanceof Integer) sentiment = ((Integer) sObj).doubleValue();
+                else if (sObj instanceof String) try { sentiment = Double.parseDouble((String)sObj); } catch(Exception e){}
 
-                // Retrieve common URL
+                // Load URL (common field)
                 String url = doc.getString("url");
+                if(url == null) url = "";
 
+                // Load Damage Category safely
+                String dTypeStr = doc.getString("damageType");
+                DamageCategory dType = DamageCategory.fromString(dTypeStr);
+
+                Media mediaItem;
                 if ("news".equals(type)) {
-                    items.add(new News(
+                    mediaItem = new News(
                             doc.getString("topic"),
                             doc.getString("content"),
                             doc.getString("source"),
+                            url,
                             doc.getDate("timestamp"),
-                            url, // Pass URL
                             sentiment
-                    ));
+                    );
                 } else {
-                    items.add(new SocialPost(
+                    mediaItem = new SocialPost(
                             doc.getString("topic"),
                             doc.getString("content"),
+                            url,
                             doc.getDate("timestamp"),
                             doc.getList("comments", String.class),
-                            sentiment,
-                            url // Pass URL
-                    ));
+                            sentiment
+                    );
                 }
+
+                mediaItem.setDamageType(dType);
+                items.add(mediaItem);
             }
         } catch (Exception e) {
             e.printStackTrace();

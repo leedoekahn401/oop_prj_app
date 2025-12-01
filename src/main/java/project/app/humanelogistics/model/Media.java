@@ -5,28 +5,27 @@ import java.util.Date;
 public abstract class Media {
     protected String topic;
     protected String content;
+    protected String url; // MOVED HERE
     protected Date timestamp;
-    protected Double sentiment;
-    protected String url; // MOVED: URL is now a common field for all media
+    protected double sentiment;
+    protected DamageCategory damageType = DamageCategory.UNKNOWN;
 
-    public Media(String topic, String content, Date timestamp, Double sentiment, String url) {
+    // Updated Constructor
+    public Media(String topic, String content, String url, Date timestamp, double sentiment) {
         this.topic = topic;
         this.content = content;
+        this.url = url;
         this.timestamp = timestamp;
         this.sentiment = sentiment;
-        this.url = url;
     }
 
-    // Backward compatibility constructor (optional)
-    public Media(String topic, String content, Date timestamp, Double sentiment) {
-        this(topic, content, timestamp, sentiment, null);
-    }
-
+    // Common Getters and Setters
     public String getTopic() { return topic; }
     public String getContent() { return content; }
+    public String getUrl() { return url; } // NEW GETTER
     public Date getTimestamp() { return timestamp; }
-    public Double getSentiment() { return sentiment; }
-    public void setSentiment(Double sentiment) { this.sentiment = sentiment; }
-    public String getUrl() { return url; }
-    public void setUrl(String url) { this.url = url; }
+    public double getSentiment() { return sentiment; }
+    public void setSentiment(double sentiment) { this.sentiment = sentiment; }
+    public DamageCategory getDamageType() { return damageType; }
+    public void setDamageType(DamageCategory damageType) { this.damageType = damageType; }
 }

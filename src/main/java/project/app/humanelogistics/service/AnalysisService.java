@@ -1,30 +1,31 @@
 package project.app.humanelogistics.service;
 
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import project.app.humanelogistics.db.MediaRepository;
+import project.app.humanelogistics.model.DamageCategory;
 import project.app.humanelogistics.model.Media;
+import project.app.humanelogistics.preprocessing.ContentClassifier;
 import project.app.humanelogistics.preprocessing.DataCollector;
-import project.app.humanelogistics.preprocessing.GoogleNewsCollector;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class AnalysisService {
 
-    // Map<RepositoryLabel, RepositoryObject>
-    // e.g. "News" -> MongoMediaRepository(news)
-    //      "Social Posts" -> MongoMediaRepository(posts)
     private final Map<String, MediaRepository> repoMap = new LinkedHashMap<>();
-
-    private final SentimentAnalyzer analyzer;
+    private final SentimentAnalyzer sentimentAnalyzer;
+    private final ContentClassifier damageClassifier;
     private final List<DataCollector> collectors = new ArrayList<>();
 
-    public AnalysisService(SentimentAnalyzer analyzer) {
-        this.analyzer = analyzer;
+    public AnalysisService(SentimentAnalyzer sentimentAnalyzer, ContentClassifier damageClassifier) {
+        this.sentimentAnalyzer = sentimentAnalyzer;
+        this.damageClassifier = damageClassifier;
     }
 
     public void addRepository(String label, MediaRepository repo) {
@@ -41,72 +42,96 @@ public class AnalysisService {
         this.collectors.clear();
     }
 
-    public void registerDefaultCollectors() {
-        registerCollectors(new GoogleNewsCollector());
-    }
-
-    public void processNewData(String topic) {
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(2);
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("M/d/yyyy");
-        processNewData(topic, startDate.format(fmt), endDate.format(fmt), true);
-    }
-
-    public void processNewData(String topic, String startDate, String endDate) {
-        processNewData(topic, startDate, endDate, true);
-    }
-
-    public void processNewData(String topic, String startDate, String endDate, boolean gradeImmediately) {
+    public void processNewData(String topic, String startDate, String endDate, boolean analyzeImmediately) {
         System.out.println("Starting Cycle for: " + topic + " [" + startDate + " to " + endDate + "]");
-        if (!gradeImmediately) System.out.println("Mode: Search Only (Grading Skipped)");
 
         for (DataCollector collector : collectors) {
-            System.out.println("Fetching from source: " + collector.getClass().getSimpleName());
             List<Media> freshData = collector.collect(topic, startDate, endDate, 1);
             for(Media item : freshData) {
-                // Save to the first registered repository by default (usually "News")
+                if (analyzeImmediately) {
+                    analyzeItem(item);
+                }
                 if (!repoMap.isEmpty()) {
                     repoMap.values().iterator().next().save(item);
                 }
-
-                if (gradeImmediately) analyzeItemIfMissing(item);
             }
         }
     }
 
-    public void processMissingSentiments(String topic) {
-        System.out.println("Scanning all databases for unscored items: " + topic);
-        int updatedCount = 0;
+    // Process existing items in DB
+    public void processExistingData(String topic) {
+        System.out.println("Scanning database for un-analyzed items: " + topic);
+        int count = 0;
 
         for (MediaRepository repo : repoMap.values()) {
             List<Media> posts = repo.findByTopic(topic);
-            for (Media post : posts) {
-                if (analyzeItemIfMissing(post, repo)) updatedCount++;
+            System.out.println("Found " + posts.size() + " items in repo. Checking for missing analysis...");
+
+            for (Media item : posts) {
+                // Check if needs analysis (Sentiment is 0 OR Damage is Unknown/Null)
+                boolean needsAnalysis = (item.getSentiment() == 0.0) ||
+                        (item.getDamageType() == null || item.getDamageType() == DamageCategory.UNKNOWN);
+
+                if (needsAnalysis) {
+                    System.out.println(" -> Analyzing: " + item.getContent().substring(0, Math.min(item.getContent().length(), 50)) + "...");
+                    analyzeItem(item);
+
+                    // Update the DB record
+                    repo.updateAnalysis(item);
+                    count++;
+
+                    try { Thread.sleep(500); } catch (InterruptedException e) {}
+                }
             }
         }
-        System.out.println("Database Grading Complete. Updated " + updatedCount + " items.");
+        System.out.println("Batch Analysis Complete. Updated " + count + " items.");
     }
 
-    private boolean analyzeItemIfMissing(Media item) {
-        if (!repoMap.isEmpty()) {
-            return analyzeItemIfMissing(item, repoMap.values().iterator().next());
-        }
-        return false;
-    }
+    private void analyzeItem(Media item) {
+        String textToAnalyze = item.getContent();
 
-    private boolean analyzeItemIfMissing(Media item, MediaRepository repo) {
-        if(isSentimentMissing(item)) {
-            try {
-                double score = analyzer.analyzeScore(item.getContent());
-                item.setSentiment(score);
-                repo.updateSentiment(item, score);
-                System.out.println("   [GRADED] " + score + " | " + item.getContent());
-                return true;
-            } catch (Exception e) {
-                System.err.println("Failed to grade item: " + e.getMessage());
+        String url = item.getUrl();
+        if (url != null && !url.isEmpty() && url.startsWith("http")) {
+            System.out.print("   [FETCHING] Reading article from URL... ");
+            String fullBody = fetchUrlContent(url);
+
+            if (!fullBody.isEmpty()) {
+                textToAnalyze = fullBody;
+                System.out.println("Success (" + fullBody.length() + " chars)");
+            } else {
+                System.out.println("Failed/Skipped (Using snippet)");
             }
         }
-        return false;
+
+        try {
+            double score = sentimentAnalyzer.analyzeScore(textToAnalyze);
+            item.setSentiment(score);
+        } catch (Exception e) {
+            System.err.println("Sentiment Error: " + e.getMessage());
+        }
+
+        try {
+            if (damageClassifier != null) {
+                DamageCategory cat = damageClassifier.classify(textToAnalyze);
+                item.setDamageType(cat);
+                System.out.println("   [RESULT] Score: " + item.getSentiment() + " | Type: " + cat);
+            }
+        } catch (Exception e) {
+            System.err.println("Classification Error: " + e.getMessage());
+        }
+    }
+
+    private String fetchUrlContent(String url) {
+        if (url == null || url.isEmpty() || !url.startsWith("http")) return "";
+        try {
+            Document doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0")
+                    .timeout(5000)
+                    .get();
+            return doc.select("p").text();
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     public int getTotalPostCount(String topic) {
@@ -120,11 +145,10 @@ public class AnalysisService {
     public double getOverallAverageScore(String topic) {
         double totalScore = 0.0;
         int count = 0;
-
         for (MediaRepository repo : repoMap.values()) {
             List<Media> posts = repo.findByTopic(topic);
             for (Media post : posts) {
-                if (!isSentimentMissing(post)) {
+                if (post.getSentiment() != 0.0) {
                     totalScore += post.getSentiment();
                     count++;
                 }
@@ -133,54 +157,56 @@ public class AnalysisService {
         return count == 0 ? 0.0 : totalScore / count;
     }
 
-    // FIX: Generate separate series for each repository in repoMap
     public TimeSeriesCollection getSentimentData(String topic, int targetYear) {
         TimeSeriesCollection dataset = new TimeSeriesCollection();
-
-        // Loop through "News", "Social Posts", etc.
         for (Map.Entry<String, MediaRepository> entry : repoMap.entrySet()) {
             String seriesName = entry.getKey();
             MediaRepository repo = entry.getValue();
-
             List<Media> posts = repo.findByTopic(topic);
-
-            // Map<Date, TotalScore>
             Map<LocalDate, Double> dailyTotal = new TreeMap<>();
             Map<LocalDate, Integer> dailyCount = new HashMap<>();
-
             boolean hasData = false;
 
             for (Media post : posts) {
-                if (post.getTimestamp() == null) continue;
-                if (isSentimentMissing(post)) continue;
-
+                if (post.getTimestamp() == null || post.getSentiment() == 0.0) continue;
                 LocalDate localDate = post.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                 if (targetYear != 0 && localDate.getYear() != targetYear) continue;
 
-                double score = post.getSentiment();
-                dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + score);
+                dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + post.getSentiment());
                 dailyCount.put(localDate, dailyCount.getOrDefault(localDate, 0) + 1);
                 hasData = true;
             }
 
-            // Create series for this repo
             TimeSeries series = new TimeSeries(seriesName);
             for (LocalDate date : dailyTotal.keySet()) {
                 double avg = dailyTotal.get(date) / dailyCount.get(date);
                 series.addOrUpdate(new Day(date.getDayOfMonth(), date.getMonthValue(), date.getYear()), avg);
             }
-
-            if (hasData) {
-                dataset.addSeries(series);
-            } else {
-                System.out.println("Warning: No valid sentiment data found for '" + seriesName + "'");
-            }
+            if (hasData) dataset.addSeries(series);
         }
-
         return dataset;
     }
 
-    private boolean isSentimentMissing(Media item) {
-        return item.getSentiment() == 0.0;
+    // UPDATED: Filter out UNKNOWN and NULL types
+    public DefaultCategoryDataset getDamageData(String topic) {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        Map<DamageCategory, Integer> counts = new HashMap<>();
+
+        for (MediaRepository repo : repoMap.values()) {
+            List<Media> posts = repo.findByTopic(topic);
+            for (Media post : posts) {
+                DamageCategory type = post.getDamageType();
+                // Filter Logic: Skip if null or UNKNOWN
+                if (type != null && type != DamageCategory.UNKNOWN) {
+                    counts.put(type, counts.getOrDefault(type, 0) + 1);
+                }
+            }
+        }
+
+        for (Map.Entry<DamageCategory, Integer> entry : counts.entrySet()) {
+            dataset.addValue(entry.getValue(), "Damage Reports", entry.getKey().getDisplayName());
+        }
+
+        return dataset;
     }
 }

@@ -6,16 +6,15 @@ import java.util.List;
 public class SocialPost extends Media {
     private List<String> comments;
 
-    // THIS IS THE CONSTRUCTOR YOUR REPOSITORY IS TRYING TO CALL (6 args)
-    public SocialPost(String topic, String content, Date timestamp, List<String> comments, Double sentiment, String url) {
-        // Pass url to parent constructor
-        super(topic, content, timestamp, sentiment, url);
+    // Updated constructor to accept URL
+    public SocialPost(String topic, String content, String url, Date timestamp, List<String> comments, double sentiment) {
+        super(topic, content, url, timestamp, sentiment);
         this.comments = comments;
     }
 
-    // Backward compatibility constructor (5 args)
-    public SocialPost(String topic, String content, Date timestamp, List<String> comments, Double sentiment) {
-        this(topic, content, timestamp, comments, sentiment, null);
+    // Overloaded constructor for backward compatibility (defaults URL to empty)
+    public SocialPost(String topic, String content, Date timestamp, List<String> comments) {
+        this(topic, content, "", timestamp, comments, 0.0);
     }
 
     public List<String> getComments() { return comments; }

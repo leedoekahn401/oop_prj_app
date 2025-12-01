@@ -3,12 +3,12 @@ package project.app.humanelogistics.model;
 import java.util.Date;
 
 public class News extends Media {
-    private String source;
-    // URL removed from here, inherited from Media
+    private String source; // e.g., "BBC", "CNN"
 
-    public News(String topic, String title, String source, Date timestamp, String url, Double sentiment) {
-
-        super(topic, title, timestamp, sentiment, url);
+    // Updated Constructor to match Media's new signature
+    public News(String topic, String title, String source, String url, Date timestamp, double sentiment) {
+        // Pass arguments to parent: topic, content, url, timestamp, sentiment
+        super(topic, title, url, timestamp, sentiment);
         this.source = source;
     }
 

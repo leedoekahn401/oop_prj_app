@@ -6,9 +6,14 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
 import org.jfree.chart.axis.DateTickUnit;
 import org.jfree.chart.axis.DateTickUnitType;
+import org.jfree.chart.plot.CategoryPlot;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.category.BarRenderer;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.chart.title.TextTitle;
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.data.general.DefaultPieDataset; // Needed for Pie Chart
 import org.jfree.data.time.TimeSeriesCollection;
 
 import java.awt.*;
@@ -18,7 +23,7 @@ import java.text.SimpleDateFormat;
 
 public class ChartService {
 
-    // Palette màu hiện đại hơn
+    // Palette of colors to cycle through for multiple lines
     private static final Color[] SERIES_COLORS = {
             new Color(230, 126, 34),  // Orange
             new Color(52, 152, 219),  // Blue
@@ -33,63 +38,85 @@ public class ChartService {
                 dataset, true, true, false
         );
 
-        // 1. BẬT KHỬ RĂNG CƯA (ANTI-ALIASING) -> Giúp nét vẽ mượt mà
-        chart.setAntiAlias(true);
-        chart.setTextAntiAlias(true);
-
-        // 2. CẤU HÌNH GIAO DIỆN (Trắng sạch)
         chart.setBackgroundPaint(Color.WHITE);
         XYPlot plot = (XYPlot) chart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(new Color(220, 220, 220)); // Grid nhạt hơn
-        plot.setRangeGridlinePaint(new Color(220, 220, 220));
-        plot.setOutlineVisible(false); // Bỏ viền đen bao quanh biểu đồ
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
 
-        // 3. CẤU HÌNH PHÔNG CHỮ (To hơn để phù hợp độ phân giải cao)
-        Font titleFont = new Font("Segoe UI", Font.BOLD, 26);
-        Font axisLabelFont = new Font("Segoe UI", Font.PLAIN, 18);
-        Font tickLabelFont = new Font("Segoe UI", Font.PLAIN, 14);
-        Font legendFont = new Font("Segoe UI", Font.PLAIN, 16);
-
-        // Set Font cho Title
-        TextTitle chartTitle = chart.getTitle();
-        chartTitle.setFont(titleFont);
-        chartTitle.setPaint(new Color(44, 62, 80)); // Màu xanh đen đậm
-
-        // Set Font cho Axis
-        plot.getDomainAxis().setLabelFont(axisLabelFont);
-        plot.getDomainAxis().setTickLabelFont(tickLabelFont);
-        plot.getRangeAxis().setLabelFont(axisLabelFont);
-        plot.getRangeAxis().setTickLabelFont(tickLabelFont);
-
-        // Set Font cho Legend (Chú thích)
-        if (chart.getLegend() != null) {
-            chart.getLegend().setItemFont(legendFont);
-            chart.getLegend().setBackgroundPaint(Color.WHITE);
-            chart.getLegend().setFrame(org.jfree.chart.block.BlockBorder.NONE); // Bỏ khung viền legend
-        }
-
-        // 4. LÀM DÀY ĐƯỜNG VẼ (Stroke)
         XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+
         for (int i = 0; i < dataset.getSeriesCount(); i++) {
             renderer.setSeriesPaint(i, SERIES_COLORS[i % SERIES_COLORS.length]);
-            // Tăng độ dày lên 4.0f (vì ảnh sẽ to gấp đôi)
-            renderer.setSeriesStroke(i, new BasicStroke(4.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-
-            // Hiện điểm dữ liệu (dot) nhưng nhỏ gọn hơn
+            renderer.setSeriesStroke(i, new BasicStroke(2.5f));
             renderer.setSeriesShapesVisible(i, true);
             renderer.setSeriesShapesFilled(i, true);
         }
 
-        // Format ngày tháng trục hoành
         DateAxis domainAxis = (DateAxis) plot.getDomainAxis();
-        domainAxis.setDateFormatOverride(new SimpleDateFormat("dd/MM"));
+        domainAxis.setDateFormatOverride(new SimpleDateFormat("MMM dd"));
         domainAxis.setTickUnit(new DateTickUnit(DateTickUnitType.DAY, 1));
 
-        // 5. LƯU ẢNH ĐỘ PHÂN GIẢI CAO (1600x1000)
-        // Khi hiển thị trên ImageView rộng 800px, ảnh sẽ bị nén lại -> Siêu nét
         File file = new File(filepath);
-        ChartUtils.saveChartAsPNG(file, chart, 1600, 1000);
+        ChartUtils.saveChartAsPNG(file, chart, 800, 500);
+        return file;
+    }
+
+    public File generateBarChart(String title, String xAxis, String yAxis, DefaultCategoryDataset dataset, String filepath) throws IOException {
+        JFreeChart chart = ChartFactory.createBarChart(
+                title, xAxis, yAxis,
+                dataset, PlotOrientation.VERTICAL, true, true, false
+        );
+
+        chart.setBackgroundPaint(Color.WHITE);
+        CategoryPlot plot = (CategoryPlot) chart.getPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+
+        BarRenderer renderer = (BarRenderer) plot.getRenderer();
+        renderer.setSeriesPaint(0, new Color(52, 152, 219)); // Blue bars
+        renderer.setDrawBarOutline(false);
+
+        File file = new File(filepath);
+        ChartUtils.saveChartAsPNG(file, chart, 800, 500);
+        return file;
+    }
+
+    // NEW METHOD: Pie Chart Generation
+    public File generatePieChart(String title, DefaultCategoryDataset categoryDataset, String filepath) throws IOException {
+        // Convert CategoryDataset to PieDataset (JFreeChart uses different datasets for Pie)
+        DefaultPieDataset pieDataset = new DefaultPieDataset();
+        for (int i = 0; i < categoryDataset.getColumnCount(); i++) {
+            Comparable key = categoryDataset.getColumnKey(i);
+            Number value = categoryDataset.getValue(0, i);
+            pieDataset.setValue(key, value);
+        }
+
+        JFreeChart chart = ChartFactory.createPieChart(
+                title,
+                pieDataset,
+                true, // legend
+                true, // tooltips
+                false // urls
+        );
+
+        chart.setBackgroundPaint(Color.WHITE);
+        PiePlot plot = (PiePlot) chart.getPlot();
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12));
+        plot.setNoDataMessage("No data available");
+        plot.setCircular(true);
+        plot.setLabelGap(0.02);
+
+        // Use custom colors if possible, or default defaults
+        // Simple way to cycle colors for sections
+        for (int i = 0; i < pieDataset.getItemCount(); i++) {
+            plot.setSectionPaint(pieDataset.getKey(i), SERIES_COLORS[i % SERIES_COLORS.length]);
+        }
+
+        File file = new File(filepath);
+        ChartUtils.saveChartAsPNG(file, chart, 800, 500);
         return file;
     }
 }
