@@ -47,7 +47,8 @@ public class GeminiDamageClassifier implements ContentClassifier {
 
             String resultText = response.text();
             if (resultText != null) {
-                return DamageCategory.fromString(resultText.trim());
+                // FIXED: Use the new method name 'fromText'
+                return DamageCategory.fromText(resultText.trim());
             }
 
         } catch (Exception e) {

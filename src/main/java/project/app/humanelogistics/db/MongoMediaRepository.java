@@ -2,10 +2,8 @@ package project.app.humanelogistics.db;
 
 import com.mongodb.client.*;
 import org.bson.Document;
-import project.app.humanelogistics.model.DamageCategory;
-import project.app.humanelogistics.model.Media;
-import project.app.humanelogistics.model.News;
-import project.app.humanelogistics.model.SocialPost;
+import project.app.humanelogistics.model.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,120 +11,101 @@ public class MongoMediaRepository implements MediaRepository {
     private final MongoCollection<Document> collection;
 
     public MongoMediaRepository(String connectionString, String dbName, String collName) {
-        try {
-            MongoClient client = MongoClients.create(connectionString);
-            MongoDatabase db = client.getDatabase(dbName);
-            this.collection = db.getCollection(collName);
-        } catch (Exception e) {
-            System.err.println("Database connection failed: " + e.getMessage());
-            throw new RuntimeException("Failed to connect to MongoDB", e);
-        }
+        MongoClient client = MongoClients.create(connectionString);
+        this.collection = client.getDatabase(dbName).getCollection(collName);
     }
 
     @Override
     public void save(Media item) {
         if(findByContent(item.getContent())) return;
 
-        // Base document with fields common to ALL Media (including URL now)
         Document doc = new Document("topic", item.getTopic())
                 .append("content", item.getContent())
                 .append("url", item.getUrl())
-                .append("timestamp", item.getTimestamp())
-                .append("sentiment", item.getSentiment())
-                .append("damageType", item.getDamageType().name());
+                .append("timestamp", item.getTimestamp());
 
-        // Type-specific fields
+        // Map Analysis Results to DB fields
+        doc.append("sentiment", item.getSentiment().getValue());
+        doc.append("damageType", item.getDamageCategory().name());
+
         if (item instanceof News) {
-            News news = (News) item;
-            doc.append("source", news.getSource());
+            doc.append("source", ((News) item).getSource());
             doc.append("type", "news");
         } else if (item instanceof SocialPost) {
-            SocialPost post = (SocialPost) item;
-            doc.append("comments", post.getComments());
+            doc.append("comments", ((SocialPost) item).getComments());
             doc.append("type", "social_post");
-        } else {
-            doc.append("type", "generic");
         }
 
         collection.insertOne(doc);
+    }
+
+    @Override
+    public void updateAnalysis(Media item) {
+        collection.updateOne(
+                new Document("content", item.getContent()).append("topic", item.getTopic()),
+                new Document("$set", new Document()
+                        .append("sentiment", item.getSentiment().getValue())
+                        .append("damageType", item.getDamageCategory().name())
+                )
+        );
+    }
+
+    @Override
+    public void updateSentiment(Media item, Double sentiment) {
+        // Forward compatibility wrapper
+        item.addAnalysisResult("sentiment", SentimentScore.of(sentiment));
+        updateAnalysis(item);
+    }
+
+    @Override
+    public List<Media> findByTopic(String topic) {
+        List<Media> items = new ArrayList<>();
+        FindIterable<Document> docs = collection.find(new Document("topic", topic));
+
+        for (Document doc : docs) {
+            Media mediaItem = mapDocumentToMedia(doc);
+            items.add(mediaItem);
+        }
+        return items;
     }
 
     private boolean findByContent(String content) {
         return collection.find(new Document("content", content)).first() != null;
     }
 
-    @Override
-    public void updateSentiment(Media item, Double sentiment) {
-        collection.updateOne(
-                new Document("content", item.getContent()).append("topic", item.getTopic()),
-                new Document("$set", new Document("sentiment", sentiment))
-        );
-    }
+    private Media mapDocumentToMedia(Document doc) {
+        String type = doc.getString("type");
+        String url = doc.getString("url");
 
-    // NEW METHOD IMPLEMENTATION
-    @Override
-    public void updateAnalysis(Media item) {
-        collection.updateOne(
-                new Document("content", item.getContent()).append("topic", item.getTopic()),
-                new Document("$set", new Document()
-                        .append("sentiment", item.getSentiment())
-                        .append("damageType", item.getDamageType().name())
-                )
-        );
-    }
-
-    @Override
-    public List<Media> findByTopic(String topic) {
-        List<Media> items = new ArrayList<>();
-        if (collection == null) return items;
-
-        try {
-            FindIterable<Document> docs = collection.find(new Document("topic", topic));
-            for (Document doc : docs) {
-                String type = doc.getString("type");
-                if(type == null) type = "news";
-
-                Double sentiment = 0.0;
-                Object sObj = doc.get("sentiment");
-                if (sObj instanceof Double) sentiment = (Double) sObj;
-                else if (sObj instanceof Integer) sentiment = ((Integer) sObj).doubleValue();
-                else if (sObj instanceof String) try { sentiment = Double.parseDouble((String)sObj); } catch(Exception e){}
-
-                // Load URL (common field)
-                String url = doc.getString("url");
-                if(url == null) url = "";
-
-                // Load Damage Category safely
-                String dTypeStr = doc.getString("damageType");
-                DamageCategory dType = DamageCategory.fromString(dTypeStr);
-
-                Media mediaItem;
-                if ("news".equals(type)) {
-                    mediaItem = new News(
-                            doc.getString("topic"),
-                            doc.getString("content"),
-                            doc.getString("source"),
-                            url,
-                            doc.getDate("timestamp"),
-                            sentiment
-                    );
-                } else {
-                    mediaItem = new SocialPost(
-                            doc.getString("topic"),
-                            doc.getString("content"),
-                            url,
-                            doc.getDate("timestamp"),
-                            doc.getList("comments", String.class),
-                            sentiment
-                    );
-                }
-
-                mediaItem.setDamageType(dType);
-                items.add(mediaItem);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        // Construct basic object
+        Media media;
+        if ("news".equals(type)) {
+            media = new News(
+                    doc.getString("topic"),
+                    doc.getString("content"),
+                    doc.getString("source"),
+                    url,
+                    doc.getDate("timestamp")
+            );
+        } else {
+            media = new SocialPost(
+                    doc.getString("topic"),
+                    doc.getString("content"),
+                    url,
+                    doc.getDate("timestamp"),
+                    doc.getList("comments", String.class)
+            );
         }
-        return items;
+
+        // Hydrate Analysis Results (OCP)
+        Double sentimentVal = doc.getDouble("sentiment");
+        if (sentimentVal == null) sentimentVal = 0.0;
+
+        String damageStr = doc.getString("damageType");
+
+        media.addAnalysisResult("sentiment", SentimentScore.of(sentimentVal));
+        media.addAnalysisResult("damageCategory", DamageCategory.fromText(damageStr));
+
+        return media;
     }
 }

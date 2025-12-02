@@ -27,4 +27,6 @@ module project.app.humanelogistics {
 
     exports project.app.humanelogistics.db;
     opens project.app.humanelogistics.db to javafx.fxml;
+    exports project.app.humanelogistics.service;
+    opens project.app.humanelogistics.service to javafx.fxml;
 }

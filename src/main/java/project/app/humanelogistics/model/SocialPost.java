@@ -1,21 +1,33 @@
 package project.app.humanelogistics.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Refactored SocialPost.
+ * Uses immutable list for comments to ensure thread safety and encapsulation.
+ */
 public class SocialPost extends Media {
-    private List<String> comments;
+    private final List<String> comments;
 
-    // Updated constructor to accept URL
-    public SocialPost(String topic, String content, String url, Date timestamp, List<String> comments, double sentiment) {
-        super(topic, content, url, timestamp, sentiment);
-        this.comments = comments;
+    public SocialPost(String topic, String content, String url, Date timestamp, List<String> comments) {
+        super(topic, content, url, timestamp);
+        this.comments = comments != null ? new ArrayList<>(comments) : new ArrayList<>();
     }
 
-    // Overloaded constructor for backward compatibility (defaults URL to empty)
-    public SocialPost(String topic, String content, Date timestamp, List<String> comments) {
-        this(topic, content, "", timestamp, comments, 0.0);
+    public List<String> getComments() {
+        return Collections.unmodifiableList(comments);
     }
 
-    public List<String> getComments() { return comments; }
+    @Override
+    public String getSourceLabel() {
+        return "Social Media";
+    }
+
+    // Domain Behavior
+    public int getEngagementLevel() {
+        return comments.size();
+    }
 }

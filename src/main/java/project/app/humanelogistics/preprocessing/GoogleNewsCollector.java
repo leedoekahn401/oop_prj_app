@@ -86,8 +86,8 @@ public class GoogleNewsCollector implements DataCollector {
             String source = el.select("div.MgUUmf, span.NUnG9d").text();
 
             if(!title.isEmpty() && !cleanLink.isEmpty()) {
-                // Updated Constructor: topic, title, source, url, timestamp, sentiment
-                posts.add(new News(topic, title, source, cleanLink, forceDate, 0.0));
+                // Fixed: Removed the sentiment (0.0) argument to match the new News constructor
+                posts.add(new News(topic, title, source, cleanLink, forceDate));
             }
         }
         return posts;
@@ -112,8 +112,8 @@ public class GoogleNewsCollector implements DataCollector {
     private List<Media> generateMockData(String topic) {
         List<Media> mocks = new ArrayList<>();
         long now = System.currentTimeMillis();
-        // Updated Constructor
-        mocks.add(new News(topic, "Typhoon Yagi Impact", "BBC", "https://www.bbc.com/news/world-asia-68000000", new Date(now), 0.0));
+        // Fixed: Removed the sentiment (0.0) argument to match the new News constructor
+        mocks.add(new News(topic, "Typhoon Yagi Impact", "BBC", "https://www.bbc.com/news/world-asia-68000000", new Date(now)));
         return mocks;
     }
 }

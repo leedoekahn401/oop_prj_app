@@ -9,6 +9,7 @@ import org.jsoup.nodes.Document;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.model.DamageCategory;
 import project.app.humanelogistics.model.Media;
+import project.app.humanelogistics.model.SentimentScore;
 import project.app.humanelogistics.preprocessing.ContentClassifier;
 import project.app.humanelogistics.preprocessing.DataCollector;
 
@@ -68,9 +69,10 @@ public class AnalysisService {
             System.out.println("Found " + posts.size() + " items in repo. Checking for missing analysis...");
 
             for (Media item : posts) {
-                // Check if needs analysis (Sentiment is 0 OR Damage is Unknown/Null)
-                boolean needsAnalysis = (item.getSentiment() == 0.0) ||
-                        (item.getDamageType() == null || item.getDamageType() == DamageCategory.UNKNOWN);
+                // FIXED: Use .getValue() for sentiment comparison
+                // FIXED: Use getDamageCategory() instead of getDamageType()
+                boolean needsAnalysis = (item.getSentiment().getValue() == 0.0) ||
+                        (item.getDamageCategory() == DamageCategory.UNKNOWN);
 
                 if (needsAnalysis) {
                     System.out.println(" -> Analyzing: " + item.getContent().substring(0, Math.min(item.getContent().length(), 50)) + "...");
@@ -105,7 +107,8 @@ public class AnalysisService {
 
         try {
             double score = sentimentAnalyzer.analyzeScore(textToAnalyze);
-            item.setSentiment(score);
+            // FIXED: Use addAnalysisResult with new Value Object
+            item.addAnalysisResult("sentiment", SentimentScore.of(score));
         } catch (Exception e) {
             System.err.println("Sentiment Error: " + e.getMessage());
         }
@@ -113,8 +116,9 @@ public class AnalysisService {
         try {
             if (damageClassifier != null) {
                 DamageCategory cat = damageClassifier.classify(textToAnalyze);
-                item.setDamageType(cat);
-                System.out.println("   [RESULT] Score: " + item.getSentiment() + " | Type: " + cat);
+                // FIXED: Use addAnalysisResult
+                item.addAnalysisResult("damageCategory", cat);
+                System.out.println("   [RESULT] Score: " + item.getSentiment().getValue() + " | Type: " + cat);
             }
         } catch (Exception e) {
             System.err.println("Classification Error: " + e.getMessage());
@@ -148,8 +152,9 @@ public class AnalysisService {
         for (MediaRepository repo : repoMap.values()) {
             List<Media> posts = repo.findByTopic(topic);
             for (Media post : posts) {
-                if (post.getSentiment() != 0.0) {
-                    totalScore += post.getSentiment();
+                // FIXED: Use .getValue()
+                if (post.getSentiment().getValue() != 0.0) {
+                    totalScore += post.getSentiment().getValue();
                     count++;
                 }
             }
@@ -168,11 +173,13 @@ public class AnalysisService {
             boolean hasData = false;
 
             for (Media post : posts) {
-                if (post.getTimestamp() == null || post.getSentiment() == 0.0) continue;
+                // FIXED: Use .getValue()
+                if (post.getTimestamp() == null || post.getSentiment().getValue() == 0.0) continue;
                 LocalDate localDate = post.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                 if (targetYear != 0 && localDate.getYear() != targetYear) continue;
 
-                dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + post.getSentiment());
+                // FIXED: Use .getValue()
+                dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + post.getSentiment().getValue());
                 dailyCount.put(localDate, dailyCount.getOrDefault(localDate, 0) + 1);
                 hasData = true;
             }
@@ -187,7 +194,6 @@ public class AnalysisService {
         return dataset;
     }
 
-    // UPDATED: Filter out UNKNOWN and NULL types
     public DefaultCategoryDataset getDamageData(String topic) {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         Map<DamageCategory, Integer> counts = new HashMap<>();
@@ -195,7 +201,8 @@ public class AnalysisService {
         for (MediaRepository repo : repoMap.values()) {
             List<Media> posts = repo.findByTopic(topic);
             for (Media post : posts) {
-                DamageCategory type = post.getDamageType();
+                // FIXED: Use getDamageCategory()
+                DamageCategory type = post.getDamageCategory();
                 if (type != null && type != DamageCategory.UNKNOWN) {
                     counts.put(type, counts.getOrDefault(type, 0) + 1);
                 }
