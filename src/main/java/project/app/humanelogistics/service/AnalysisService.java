@@ -24,9 +24,18 @@ public class AnalysisService {
     private final ContentClassifier damageClassifier;
     private final List<DataCollector> collectors = new ArrayList<>();
 
+    // NEW: Dependency for summarization
+    private SummaryGenerator summaryGenerator;
+
     public AnalysisService(SentimentAnalyzer sentimentAnalyzer, ContentClassifier damageClassifier) {
+        // Chain to new constructor to maintain backward compatibility
+        this(sentimentAnalyzer, damageClassifier, null);
+    }
+
+    public AnalysisService(SentimentAnalyzer sentimentAnalyzer, ContentClassifier damageClassifier, SummaryGenerator summaryGenerator) {
         this.sentimentAnalyzer = sentimentAnalyzer;
         this.damageClassifier = damageClassifier;
+        this.summaryGenerator = summaryGenerator;
     }
 
     public void addRepository(String label, MediaRepository repo) {
@@ -69,8 +78,6 @@ public class AnalysisService {
             System.out.println("Found " + posts.size() + " items in repo. Checking for missing analysis...");
 
             for (Media item : posts) {
-                // FIXED: Use .getValue() for sentiment comparison
-                // FIXED: Use getDamageCategory() instead of getDamageType()
                 boolean needsAnalysis = (item.getSentiment().getValue() == 0.0) ||
                         (item.getDamageCategory() == DamageCategory.UNKNOWN);
 
@@ -107,7 +114,6 @@ public class AnalysisService {
 
         try {
             double score = sentimentAnalyzer.analyzeScore(textToAnalyze);
-            // FIXED: Use addAnalysisResult with new Value Object
             item.addAnalysisResult("sentiment", SentimentScore.of(score));
         } catch (Exception e) {
             System.err.println("Sentiment Error: " + e.getMessage());
@@ -116,7 +122,6 @@ public class AnalysisService {
         try {
             if (damageClassifier != null) {
                 DamageCategory cat = damageClassifier.classify(textToAnalyze);
-                // FIXED: Use addAnalysisResult
                 item.addAnalysisResult("damageCategory", cat);
                 System.out.println("   [RESULT] Score: " + item.getSentiment().getValue() + " | Type: " + cat);
             }
@@ -152,7 +157,6 @@ public class AnalysisService {
         for (MediaRepository repo : repoMap.values()) {
             List<Media> posts = repo.findByTopic(topic);
             for (Media post : posts) {
-                // FIXED: Use .getValue()
                 if (post.getSentiment().getValue() != 0.0) {
                     totalScore += post.getSentiment().getValue();
                     count++;
@@ -173,12 +177,10 @@ public class AnalysisService {
             boolean hasData = false;
 
             for (Media post : posts) {
-                // FIXED: Use .getValue()
                 if (post.getTimestamp() == null || post.getSentiment().getValue() == 0.0) continue;
                 LocalDate localDate = post.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                 if (targetYear != 0 && localDate.getYear() != targetYear) continue;
 
-                // FIXED: Use .getValue()
                 dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + post.getSentiment().getValue());
                 dailyCount.put(localDate, dailyCount.getOrDefault(localDate, 0) + 1);
                 hasData = true;
@@ -201,7 +203,6 @@ public class AnalysisService {
         for (MediaRepository repo : repoMap.values()) {
             List<Media> posts = repo.findByTopic(topic);
             for (Media post : posts) {
-                // FIXED: Use getDamageCategory()
                 DamageCategory type = post.getDamageCategory();
                 if (type != null && type != DamageCategory.UNKNOWN) {
                     counts.put(type, counts.getOrDefault(type, 0) + 1);
@@ -214,5 +215,35 @@ public class AnalysisService {
         }
 
         return dataset;
+    }
+
+    // NEW METHOD: Moved business logic from Controller to Service
+    public String getTopDamageCategory(String topic) {
+        DefaultCategoryDataset dataset = getDamageData(topic);
+        String topDmg = "None";
+        double maxVal = 0;
+
+        if (dataset != null) {
+            for(int i=0; i<dataset.getColumnCount(); i++) {
+                Number val = dataset.getValue(0, i);
+                if(val != null && val.doubleValue() > maxVal) {
+                    maxVal = val.doubleValue();
+                    Comparable key = dataset.getColumnKey(i);
+                    topDmg = (key != null) ? key.toString() : "Unknown";
+                }
+            }
+        }
+        return topDmg;
+    }
+
+    // NEW METHOD: Orchestrates the summary generation
+    public String generateTopicInsight(String topic) {
+        if (summaryGenerator == null) return "Summary generator not initialized.";
+
+        int total = getTotalPostCount(topic);
+        double score = getOverallAverageScore(topic);
+        String topDamage = getTopDamageCategory(topic);
+
+        return summaryGenerator.generateSummary(topic, total, score, topDamage);
     }
 }

@@ -10,12 +10,7 @@ public class NewsIngestionTask {
     public static void main(String[] args) {
         System.out.println("--- Starting News Ingestion Task ---");
 
-        // 1. SETUP DB: Point to 'news' collection
-        // We use the Interface 'MediaRepository' for the variable type
-        // But we instantiate the Concrete Class 'MongoPostRepository'
-        // The 3rd argument "news" tells MongoDB to use that specific collection.
-        String dbConn = "mongodb+srv://ducanh4012006_db_user:5zEVVC3o7Sjnl2le@cluster0.dwzpibi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-        MediaRepository newsRepo = new MongoMediaRepository(dbConn, "storm_data", "news");
+        MediaRepository newsRepo = new MongoMediaRepository("storm_data", "news");
 
         // 2. COLLECT
         // We use the GoogleNewsCollector which returns a list of Medias (specifically News objects)

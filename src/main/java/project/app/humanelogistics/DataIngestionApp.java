@@ -20,7 +20,7 @@ public class DataIngestionApp {
 
         // 1. Setup Dependencies
         String dbConn = Config.getDbConnectionString();
-        MediaRepository repo = new MongoMediaRepository(dbConn, "storm_data", "news");
+        MediaRepository repo = new MongoMediaRepository("storm_data", "news");
 
         // 2. Initialize BOTH AI Models
         SentimentGrade sentimentAnalyzer = new SentimentGrade();
