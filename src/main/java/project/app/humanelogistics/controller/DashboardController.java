@@ -1,14 +1,22 @@
 package project.app.humanelogistics.controller;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.util.Pair;
 import project.app.humanelogistics.config.ServiceLocator;
 import project.app.humanelogistics.model.SentimentScore;
 import project.app.humanelogistics.service.*;
 import project.app.humanelogistics.utils.AsyncTaskUtil;
 import project.app.humanelogistics.view.DashboardViewManager;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 public class DashboardController {
 
@@ -26,7 +34,7 @@ public class DashboardController {
     @FXML private Label lblTopDamageCount;
     @FXML private Label lblSummary;
 
-    // Services (Injected via ServiceLocator)
+    // Services
     private DashboardService dashboardService;
     private NavigationService navigationService;
     private ChartService chartService;
@@ -44,26 +52,20 @@ public class DashboardController {
         }
     }
 
-    /**
-     * FIXED: Use dependency injection instead of direct instantiation
-     */
     private void initializeServices() {
         this.dashboardService = ServiceLocator.get(DashboardService.class);
         this.navigationService = ServiceLocator.get(NavigationService.class);
         this.chartService = ServiceLocator.get(ChartService.class);
     }
 
-    /**
-     * FIXED: Delegate view initialization to ViewManager
-     */
     private void initializeView() {
-        this.viewManager = new DashboardViewManager(mainContent);
-        viewManager.initialize();
+        // Capture the default content from FXML before we modify the container
+        ObservableList<Node> defaultNodes = FXCollections.observableArrayList(mainContent.getChildren());
+
+        // Initialize ViewManager with container AND default content
+        this.viewManager = new DashboardViewManager(mainContent, defaultNodes);
     }
 
-    /**
-     * FIXED: Simplified navigation setup
-     */
     private void setupNavigation() {
         navigationService.registerButtons(
                 homeButton, sentimentButton, inventoryButton, informationButton
@@ -75,12 +77,8 @@ public class DashboardController {
         informationButton.setOnAction(e -> showInformation());
     }
 
-    /**
-     * FIXED: Controller only orchestrates, no business logic
-     */
     private void loadDashboardData() {
         setLoadingState();
-
         AsyncTaskUtil.execute(
                 () -> dashboardService.getDashboardStats(),
                 this::updateDashboardUI,
@@ -88,14 +86,10 @@ public class DashboardController {
         );
     }
 
-    /**
-     * FIXED: Pure UI update, no calculations
-     */
     private void updateDashboardUI(DashboardStats stats) {
         lblTotalPosts.setText(String.valueOf(stats.getTotalPosts()));
         lblSentimentScore.setText(String.format("%.2f", stats.getAvgSentiment()));
 
-        // Use SentimentDisplay to apply styling
         SentimentScore sentimentScore = SentimentScore.of(stats.getAvgSentiment());
         new SentimentDisplay(sentimentScore).applyTo(lblSentimentLabel);
 
@@ -112,7 +106,7 @@ public class DashboardController {
     }
 
     // ========================================
-    // NAVIGATION HANDLERS (Thin Orchestration)
+    // NAVIGATION HANDLERS
     // ========================================
 
     private void showHome() {
@@ -125,11 +119,18 @@ public class DashboardController {
         viewManager.showLoading("Generating Sentiment Analysis...");
 
         AsyncTaskUtil.execute(
-                () -> new SentimentChartData(
-                        dashboardService.getSentimentTimeSeries(),
-                        chartService
-                ),
-                chartData -> viewManager.showSentimentChart(chartData),
+                () -> {
+                    try {
+                        return new SentimentChartData(
+                                dashboardService.getSentimentTimeSeries(),
+                                chartService
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                // FIXED: Used generic showChart method instead of missing showSentimentChart
+                chartData -> viewManager.showChart("Sentiment Trends", chartData.getChartFile()),
                 this::handleError
         );
     }
@@ -139,18 +140,30 @@ public class DashboardController {
         viewManager.showLoading("Analyzing Damage Reports...");
 
         AsyncTaskUtil.execute(
-                () -> new DamageChartData(
-                        dashboardService.getDamageDataset(),
-                        chartService
+                () -> {
+                    try {
+                        return new DamageChartData(
+                                dashboardService.getDamageDataset(),
+                                chartService
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                chartData -> viewManager.showChartGallery("Damage Analysis",
+                        List.of(
+                                new Pair<>("Distribution", chartData.getPieChart()),
+                                new Pair<>("Counts", chartData.getBarChart())
+                        )
                 ),
-                chartData -> viewManager.showDamageCharts(chartData),
                 this::handleError
         );
     }
 
     private void showInformation() {
         navigationService.setActiveButton(informationButton);
-        viewManager.showDevelopers();
+        // Pass empty list or fetch developers from a service if available
+        viewManager.showDevelopers(Collections.emptyList());
     }
 
     // ========================================

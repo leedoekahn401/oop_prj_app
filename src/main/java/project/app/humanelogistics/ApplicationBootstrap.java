@@ -3,6 +3,7 @@ package project.app.humanelogistics;
 import project.app.humanelogistics.config.AppConfig;
 import project.app.humanelogistics.config.ServiceLocator;
 import project.app.humanelogistics.factory.RepositoryFactory;
+import project.app.humanelogistics.preprocessing.ContentClassifier; // Added Import
 import project.app.humanelogistics.preprocessing.GeminiDamageClassifier;
 import project.app.humanelogistics.preprocessing.SentimentGrade;
 import project.app.humanelogistics.service.*;

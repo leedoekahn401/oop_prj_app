@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
@@ -48,61 +49,66 @@
 
     <!-- MAIN CONTENT AREA -->
     <center>
-        <VBox spacing="20" styleClass="main-layout">
-            <padding>
-                <Insets top="30" right="30" bottom="30" left="30"/>
-            </padding>
+        <!-- FIXED: Wrapped content in ScrollPane to enable scrolling -->
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
+            <content>
+                <VBox spacing="20" styleClass="main-layout">
+                    <padding>
+                        <Insets top="30" right="30" bottom="30" left="30"/>
+                    </padding>
 
-            <!-- Header -->
-            <Label text="Overview" styleClass="page-title"/>
+                    <!-- Header -->
+                    <Label text="Overview" styleClass="page-title"/>
 
-            <!-- DYNAMIC CONTENT CONTAINER -->
-            <!-- The Controller swaps the content of this VBox -->
-            <VBox fx:id="mainContent" spacing="20" VBox.vgrow="ALWAYS">
+                    <!-- DYNAMIC CONTENT CONTAINER -->
+                    <!-- The Controller swaps the content of this VBox -->
+                    <VBox fx:id="mainContent" spacing="20" VBox.vgrow="ALWAYS">
 
-                <!-- 1. KEY STATISTICS CARDS (Grid Layout) -->
-                <GridPane hgap="20" vgap="20">
-                    <columnConstraints>
-                        <ColumnConstraints percentWidth="33.3" />
-                        <ColumnConstraints percentWidth="33.3" />
-                        <ColumnConstraints percentWidth="33.3" />
-                    </columnConstraints>
+                        <!-- 1. KEY STATISTICS CARDS (Grid Layout) -->
+                        <GridPane hgap="20" vgap="20">
+                            <columnConstraints>
+                                <ColumnConstraints percentWidth="33.3" />
+                                <ColumnConstraints percentWidth="33.3" />
+                                <ColumnConstraints percentWidth="33.3" />
+                            </columnConstraints>
 
-                    <!-- Card 1: Total Posts -->
-                    <VBox styleClass="stat-card" GridPane.columnIndex="0">
-                        <Label text="Total Reports" styleClass="stat-title"/>
-                        <Label fx:id="lblTotalPosts" text="Loading..." styleClass="stat-value"/>
+                            <!-- Card 1: Total Posts -->
+                            <VBox styleClass="stat-card" GridPane.columnIndex="0">
+                                <Label text="Total Reports" styleClass="stat-title"/>
+                                <Label fx:id="lblTotalPosts" text="Loading..." styleClass="stat-value"/>
+                            </VBox>
+
+                            <!-- Card 2: Sentiment -->
+                            <VBox styleClass="stat-card" GridPane.columnIndex="1">
+                                <Label text="Public Sentiment" styleClass="stat-title"/>
+                                <HBox alignment="BASELINE_LEFT" spacing="10">
+                                    <Label fx:id="lblSentimentScore" text="--" styleClass="stat-value"/>
+                                    <Label fx:id="lblSentimentLabel" text="..." styleClass="sentiment-badge"/>
+                                </HBox>
+                            </VBox>
+
+                            <!-- Card 3: Top Damage -->
+                            <VBox styleClass="stat-card" GridPane.columnIndex="2">
+                                <Label text="Critical Damage" styleClass="stat-title"/>
+                                <Label fx:id="lblTopDamage" text="Loading..." styleClass="stat-value-danger"/>
+                                <Label fx:id="lblTopDamageCount" text="-- reports" styleClass="stat-subtext"/>
+                            </VBox>
+                        </GridPane>
+
+                        <!-- 2. NEW: AI SUMMARY SECTION -->
+                        <VBox styleClass="summary-card" VBox.vgrow="NEVER">
+                            <HBox alignment="CENTER_LEFT" spacing="10">
+                                <!-- Simple Icon using Label for now -->
+                                <Label text="Summary" styleClass="summary-header"/>
+                            </HBox>
+                            <Label fx:id="lblSummary"
+                                   text="Waiting for AI analysis..."
+                                   wrapText="true"
+                                   styleClass="summary-text"/>
+                        </VBox>
                     </VBox>
-
-                    <!-- Card 2: Sentiment -->
-                    <VBox styleClass="stat-card" GridPane.columnIndex="1">
-                        <Label text="Public Sentiment" styleClass="stat-title"/>
-                        <HBox alignment="BASELINE_LEFT" spacing="10">
-                            <Label fx:id="lblSentimentScore" text="--" styleClass="stat-value"/>
-                            <Label fx:id="lblSentimentLabel" text="..." styleClass="sentiment-badge"/>
-                        </HBox>
-                    </VBox>
-
-                    <!-- Card 3: Top Damage -->
-                    <VBox styleClass="stat-card" GridPane.columnIndex="2">
-                        <Label text="Critical Damage" styleClass="stat-title"/>
-                        <Label fx:id="lblTopDamage" text="Loading..." styleClass="stat-value-danger"/>
-                        <Label fx:id="lblTopDamageCount" text="-- reports" styleClass="stat-subtext"/>
-                    </VBox>
-                </GridPane>
-
-                <!-- 2. NEW: AI SUMMARY SECTION -->
-                <VBox styleClass="summary-card" VBox.vgrow="NEVER">
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <!-- Simple Icon using Label for now -->
-                        <Label text="Summary" styleClass="summary-header"/>
-                    </HBox>
-                    <Label fx:id="lblSummary"
-                           text="Waiting for AI analysis..."
-                           wrapText="true"
-                           styleClass="summary-text"/>
                 </VBox>
-            </VBox>
-        </VBox>
+            </content>
+        </ScrollPane>
     </center>
 </BorderPane>

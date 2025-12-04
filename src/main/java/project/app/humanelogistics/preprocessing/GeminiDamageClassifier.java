@@ -10,7 +10,9 @@ public class GeminiDamageClassifier implements ContentClassifier {
     private final Client client;
 
     public GeminiDamageClassifier() {
-        String apiKey = AppConfig.getApiKey();
+        // FIXED: AppConfig is a singleton, so we must call getInstance() first
+        String apiKey = AppConfig.getInstance().getApiKey();
+
         if (apiKey == null || apiKey.isEmpty()) {
             System.err.println("Warning: initializing GeminiDamageClassifier without valid API key.");
             this.client = null;
@@ -47,7 +49,6 @@ public class GeminiDamageClassifier implements ContentClassifier {
 
             String resultText = response.text();
             if (resultText != null) {
-                // FIXED: Use the new method name 'fromText'
                 return DamageCategory.fromText(resultText.trim());
             }
 

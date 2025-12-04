@@ -8,7 +8,7 @@ public class GeminiSummaryGenerator implements SummaryGenerator {
     private final Client client;
 
     public GeminiSummaryGenerator() {
-        String apiKey = AppConfig.getApiKey();
+        String apiKey = AppConfig.getInstance().getApiKey();
         if (apiKey != null && !apiKey.isEmpty()) {
             this.client = Client.builder().apiKey(apiKey).build();
         } else {

@@ -11,7 +11,7 @@ public class SentimentGrade implements SentimentAnalyzer {
 
     public SentimentGrade() {
         // USE CONFIG CLASS FOR ROBUST KEY LOADING
-        String apiKey = AppConfig.getApiKey();
+        String apiKey = AppConfig.getInstance().getApiKey();
 
         if (apiKey == null || apiKey.isEmpty()) {
             System.err.println("Warning: initializing SentimentGrade without valid API key.");
