@@ -6,17 +6,17 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
 import project.app.humanelogistics.model.Developer;
-import project.app.humanelogistics.util.UIFactory;
+import project.app.humanelogistics.factory.UIFactory;
 
 import java.io.File;
 import java.util.List;
 
-public class DashboardView {
+public class DashboardViewManager {
 
     private final VBox container;
     private final ObservableList<Node> defaultContent;
 
-    public DashboardView(VBox container, ObservableList<Node> defaultContent) {
+    public DashboardViewManager(VBox container, ObservableList<Node> defaultContent) {
         this.container = container;
         this.defaultContent = defaultContent;
     }

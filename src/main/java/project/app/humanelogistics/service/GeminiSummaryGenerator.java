@@ -2,13 +2,13 @@ package project.app.humanelogistics.service;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
-import project.app.humanelogistics.Config;
+import project.app.humanelogistics.config.AppConfig;
 
 public class GeminiSummaryGenerator implements SummaryGenerator {
     private final Client client;
 
     public GeminiSummaryGenerator() {
-        String apiKey = Config.getApiKey();
+        String apiKey = AppConfig.getApiKey();
         if (apiKey != null && !apiKey.isEmpty()) {
             this.client = Client.builder().apiKey(apiKey).build();
         } else {

@@ -13,7 +13,7 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="project.app.humanelogistics.controller.DashBoardController"
+            fx:controller="project.app.humanelogistics.controller.DashboardController"
             stylesheets="@styles.css"
             prefWidth="1280" prefHeight="800">
 

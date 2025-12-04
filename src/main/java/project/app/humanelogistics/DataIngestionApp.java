@@ -1,10 +1,9 @@
 package project.app.humanelogistics;
 
-import project.app.humanelogistics.db.MediaRepository;
-import project.app.humanelogistics.db.MongoMediaRepository;
-import project.app.humanelogistics.preprocessing.GeminiDamageClassifier;
+import project.app.humanelogistics.config.AppConfig;
+import project.app.humanelogistics.config.ServiceLocator;
+import project.app.humanelogistics.factory.RepositoryFactory;
 import project.app.humanelogistics.preprocessing.GoogleNewsCollector;
-import project.app.humanelogistics.preprocessing.SentimentGrade;
 import project.app.humanelogistics.service.AnalysisService;
 
 import java.time.LocalDate;
@@ -18,25 +17,21 @@ public class DataIngestionApp {
         System.out.println("   HUMANE LOGISTICS - DATA INGESTION TOOL");
         System.out.println("==========================================");
 
-        // 1. Setup Dependencies
-        String dbConn = Config.getDbConnectionString();
-        MediaRepository repo = new MongoMediaRepository("storm_data", "news");
+        // FIXED: Use centralized initialization
+        ApplicationBootstrap.initialize();
 
-        // 2. Initialize BOTH AI Models
-        SentimentGrade sentimentAnalyzer = new SentimentGrade();
-        GeminiDamageClassifier damageClassifier = new GeminiDamageClassifier();
-
-        AnalysisService service = new AnalysisService(sentimentAnalyzer, damageClassifier);
-        service.addRepository("News", repo);
+        // Get services from container
+        AnalysisService service = ServiceLocator.get(AnalysisService.class);
+        AppConfig config = AppConfig.getInstance();
 
         Scanner scanner = new Scanner(System.in);
 
-        // 3. CONFIGURATION INPUTS
+        // Configuration inputs
         System.out.println("--- Configuration ---");
 
-        System.out.print("Enter Search Topic (default: Typhoon Yagi): ");
+        System.out.print("Enter Search Topic (default: " + config.getDefaultTopic() + "): ");
         String topicInput = scanner.nextLine().trim();
-        String topic = topicInput.isEmpty() ? "Typhoon Yagi" : topicInput;
+        String topic = topicInput.isEmpty() ? config.getDefaultTopic() : topicInput;
 
         LocalDate today = LocalDate.now();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("M/d/yyyy");
@@ -54,7 +49,7 @@ public class DataIngestionApp {
         System.out.println("\nUsing Topic: " + topic);
         System.out.println("Date Range:  " + startDate + " -> " + endDate);
 
-        // 4. Interactive Menu
+        // Interactive Menu
         System.out.println("\n--- Select Mode ---");
         System.out.println("   [1] Search Only  (Collect data, No AI)");
         System.out.println("   [2] Search + Analyze (Full Cycle)");
@@ -63,7 +58,7 @@ public class DataIngestionApp {
 
         String choice = scanner.nextLine().trim();
 
-        // 5. Execution Logic
+        // Execution Logic
         if (choice.equals("1")) {
             System.out.println("\n>>> STARTING SEARCH ONLY <<<");
             service.clearCollectors();
@@ -89,5 +84,6 @@ public class DataIngestionApp {
         System.out.println("==========================================");
 
         scanner.close();
+        ApplicationBootstrap.cleanup();
     }
 }

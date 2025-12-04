@@ -2,7 +2,7 @@ package project.app.humanelogistics.preprocessing;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
-import project.app.humanelogistics.Config;
+import project.app.humanelogistics.config.AppConfig;
 import project.app.humanelogistics.model.DamageCategory;
 
 public class GeminiDamageClassifier implements ContentClassifier {
@@ -10,7 +10,7 @@ public class GeminiDamageClassifier implements ContentClassifier {
     private final Client client;
 
     public GeminiDamageClassifier() {
-        String apiKey = Config.getApiKey();
+        String apiKey = AppConfig.getApiKey();
         if (apiKey == null || apiKey.isEmpty()) {
             System.err.println("Warning: initializing GeminiDamageClassifier without valid API key.");
             this.client = null;

@@ -2,7 +2,7 @@ package project.app.humanelogistics.preprocessing;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
-import project.app.humanelogistics.Config;
+import project.app.humanelogistics.config.AppConfig;
 import project.app.humanelogistics.service.SentimentAnalyzer;
 
 public class SentimentGrade implements SentimentAnalyzer {
@@ -11,7 +11,7 @@ public class SentimentGrade implements SentimentAnalyzer {
 
     public SentimentGrade() {
         // USE CONFIG CLASS FOR ROBUST KEY LOADING
-        String apiKey = Config.getApiKey();
+        String apiKey = AppConfig.getApiKey();
 
         if (apiKey == null || apiKey.isEmpty()) {
             System.err.println("Warning: initializing SentimentGrade without valid API key.");
