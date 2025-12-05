@@ -1,21 +1,23 @@
 package project.app.humanelogistics;
 
 import project.app.humanelogistics.config.AppConfig;
+import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.factory.RepositoryFactory;
-import project.app.humanelogistics.preprocessing.ContentClassifier;
-import project.app.humanelogistics.preprocessing.GeminiDamageClassifier;
-import project.app.humanelogistics.preprocessing.SentimentGrade;
+import project.app.humanelogistics.preprocessing.analysis.ContentClassifier;
+import project.app.humanelogistics.preprocessing.analysis.GeminiDamageClassifier;
+import project.app.humanelogistics.preprocessing.IngestionPipeline; // NEW IMPORT
+import project.app.humanelogistics.preprocessing.analysis.SentimentGrade;
+import project.app.humanelogistics.preprocessing.analysis.SentimentAnalyzer;
 import project.app.humanelogistics.service.*;
 
 public class ApplicationBootstrap {
 
     private static RepositoryFactory repositoryFactory;
-
-    // Exposed Services for Dependency Injection
     private static DashboardService dashboardService;
     private static NavigationService navigationService;
     private static ChartService chartService;
-    private static AnalysisService analysisService;
+    private static StatisticsService statisticsService;
+    private static IngestionPipeline ingestionPipeline;
 
     public static void initialize() {
         System.out.println("Initializing Humane Logistics Application...");
@@ -24,22 +26,19 @@ public class ApplicationBootstrap {
             AppConfig config = AppConfig.getInstance();
             repositoryFactory = new RepositoryFactory(config);
 
-            // Create core services
+            MediaRepository newsRepo = repositoryFactory.getNewsRepository();
+            MediaRepository socialRepo = repositoryFactory.getSocialPostRepository();
             SentimentAnalyzer sentimentAnalyzer = new SentimentGrade();
             ContentClassifier damageClassifier = new GeminiDamageClassifier();
+            ingestionPipeline = new IngestionPipeline(sentimentAnalyzer, damageClassifier);
+            ingestionPipeline.addRepository("News", newsRepo);
+            ingestionPipeline.addRepository("Social Posts", socialRepo);
             SummaryGenerator summaryGenerator = new GeminiSummaryGenerator();
-
-            analysisService = new AnalysisService(
-                    sentimentAnalyzer,
-                    damageClassifier,
-                    summaryGenerator
-            );
-
-            analysisService.addRepository("News", repositoryFactory.getNewsRepository());
-            analysisService.addRepository("Social Posts", repositoryFactory.getSocialPostRepository());
-
+            statisticsService = new StatisticsService(summaryGenerator);
+            statisticsService.addRepository("News", newsRepo);
+            statisticsService.addRepository("Social Posts", socialRepo);
             dashboardService = new DashboardService(
-                    analysisService,
+                    statisticsService,
                     config.getDefaultTopic(),
                     config.getAnalysisYear()
             );
@@ -48,20 +47,20 @@ public class ApplicationBootstrap {
             chartService = new ChartService();
 
             registerShutdownHook();
-            System.out.println("Application initialized successfully!");
 
         } catch (Exception e) {
-            System.err.println("CRITICAL: Application initialization failed!");
             e.printStackTrace();
-            throw new RuntimeException("Failed to initialize application", e);
         }
     }
 
-    // --- Getters for Main and DataIngestionApp to use ---
+
     public static DashboardService getDashboardService() { return dashboardService; }
     public static NavigationService getNavigationService() { return navigationService; }
     public static ChartService getChartService() { return chartService; }
-    public static AnalysisService getAnalysisService() { return analysisService; }
+    public static StatisticsService getStatisticsService() { return statisticsService; }
+
+
+    public static IngestionPipeline getIngestionPipeline() { return ingestionPipeline; }
 
     private static void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -73,8 +72,9 @@ public class ApplicationBootstrap {
         if (repositoryFactory != null) {
             try {
                 repositoryFactory.close();
+                System.out.println("Resources cleaned up.");
             } catch (Exception e) {
-                System.err.println("Error: " + e.getMessage());
+                System.err.println("Error during cleanup: " + e.getMessage());
             }
         }
     }

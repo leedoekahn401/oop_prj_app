@@ -1,9 +1,8 @@
-package project.app.humanelogistics.preprocessing;
+package project.app.humanelogistics.preprocessing.analysis;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import project.app.humanelogistics.config.AppConfig;
-import project.app.humanelogistics.service.SentimentAnalyzer;
 
 public class SentimentGrade implements SentimentAnalyzer {
 

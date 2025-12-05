@@ -4,6 +4,8 @@ import project.app.humanelogistics.config.AppConfig;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.factory.RepositoryFactory;
 import project.app.humanelogistics.model.Media;
+import project.app.humanelogistics.preprocessing.collector.DataCollector;
+import project.app.humanelogistics.preprocessing.collector.GoogleNewsCollector;
 
 import java.util.List;
 

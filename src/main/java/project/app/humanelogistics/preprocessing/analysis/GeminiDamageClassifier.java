@@ -1,4 +1,4 @@
-package project.app.humanelogistics.preprocessing;
+package project.app.humanelogistics.preprocessing.analysis;
 
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;

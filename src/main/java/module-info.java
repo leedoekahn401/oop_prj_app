@@ -35,4 +35,8 @@ module project.app.humanelogistics {
     opens project.app.humanelogistics.utils to javafx.fxml;
     exports project.app.humanelogistics.factory;
     opens project.app.humanelogistics.factory to javafx.fxml;
+    exports project.app.humanelogistics.preprocessing.collector;
+    opens project.app.humanelogistics.preprocessing.collector to javafx.fxml;
+    exports project.app.humanelogistics.preprocessing.analysis;
+    opens project.app.humanelogistics.preprocessing.analysis to javafx.fxml;
 }

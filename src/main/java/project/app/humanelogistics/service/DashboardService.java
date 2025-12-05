@@ -4,91 +4,58 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.time.TimeSeriesCollection;
 
 public class DashboardService {
-    private final AnalysisService analysisService;
+    // CHANGED: Depends on StatisticsService now
+    private final StatisticsService statisticsService;
     private final String defaultTopic;
     private final int defaultYear;
 
-    public DashboardService(AnalysisService analysisService, String defaultTopic, int defaultYear) {
-        this.analysisService = analysisService;
+    public DashboardService(StatisticsService statisticsService, String defaultTopic, int defaultYear) {
+        this.statisticsService = statisticsService;
         this.defaultTopic = defaultTopic;
         this.defaultYear = defaultYear;
     }
 
-    /**
-     * Retrieves all dashboard statistics in one call
-     * Fixes: Business logic extracted from controller
-     */
     public DashboardStats getDashboardStats() {
         return getDashboardStats(defaultTopic);
     }
 
     public DashboardStats getDashboardStats(String topic) {
-        int totalPosts = analysisService.getTotalPostCount(topic);
-        double avgSentiment = analysisService.getOverallAverageScore(topic);
+        int totalPosts = statisticsService.getTotalPostCount(topic);
+        double avgSentiment = statisticsService.getOverallAverageScore(topic);
 
-        // FIXED: Extract this calculation from controller
-        DefaultCategoryDataset damageData = analysisService.getDamageData(topic);
-        DamageInfo damageInfo = calculateTopDamage(damageData);
+        // This logic is now inside StatisticsService
+        String topCategory = statisticsService.getTopDamageCategory(topic);
 
-        String summary = analysisService.generateTopicInsight(topic);
+        // Use a simpler approach to get the count for the top category
+        DefaultCategoryDataset damageData = statisticsService.getDamageData(topic);
+        int topCount = getCountForCategory(damageData, topCategory);
+
+        String summary = statisticsService.generateTopicInsight(topic);
 
         return new DashboardStats(
                 totalPosts,
                 avgSentiment,
-                damageInfo.getTopCategory(),
-                damageInfo.getTopCount(),
+                topCategory,
+                topCount,
                 summary
         );
     }
 
-    /**
-     * FIXED: Business logic moved from controller to service
-     */
-    private DamageInfo calculateTopDamage(DefaultCategoryDataset dataset) {
-        String topCategory = "None";
-        int maxCount = 0;
-
-        if (dataset != null && dataset.getColumnCount() > 0) {
-            for (int i = 0; i < dataset.getColumnCount(); i++) {
-                Number value = dataset.getValue(0, i);
-                if (value != null && value.intValue() > maxCount) {
-                    maxCount = value.intValue();
-                    Comparable key = dataset.getColumnKey(i);
-                    topCategory = (key != null) ? key.toString() : "Unknown";
-                }
-            }
+    private int getCountForCategory(DefaultCategoryDataset dataset, String category) {
+        if (dataset == null || category.equals("None")) return 0;
+        try {
+            Number value = dataset.getValue("Damage Reports", category);
+            return value != null ? value.intValue() : 0;
+        } catch (Exception e) {
+            return 0;
         }
-
-        return new DamageInfo(topCategory, maxCount);
     }
 
     public TimeSeriesCollection getSentimentTimeSeries() {
-        return getSentimentTimeSeries(defaultTopic);
-    }
-
-    public TimeSeriesCollection getSentimentTimeSeries(String topic) {
-        return analysisService.getSentimentData(topic, defaultYear);
+        return statisticsService.getSentimentData(defaultTopic, defaultYear);
     }
 
     public DefaultCategoryDataset getDamageDataset() {
-        return getDamageDataset(defaultTopic);
-    }
-
-    public DefaultCategoryDataset getDamageDataset(String topic) {
-        return analysisService.getDamageData(topic);
-    }
-
-    // Inner class for damage information
-    public static class DamageInfo {
-        private final String topCategory;
-        private final int topCount;
-
-        public DamageInfo(String topCategory, int topCount) {
-            this.topCategory = topCategory;
-            this.topCount = topCount;
-        }
-
-        public String getTopCategory() { return topCategory; }
-        public int getTopCount() { return topCount; }
+        return statisticsService.getDamageData(defaultTopic);
     }
 }

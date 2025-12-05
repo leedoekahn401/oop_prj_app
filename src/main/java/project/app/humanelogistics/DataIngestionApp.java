@@ -1,8 +1,8 @@
 package project.app.humanelogistics;
 
 import project.app.humanelogistics.config.AppConfig;
-import project.app.humanelogistics.preprocessing.GoogleNewsCollector;
-import project.app.humanelogistics.service.AnalysisService;
+import project.app.humanelogistics.preprocessing.collector.GoogleNewsCollector;
+import project.app.humanelogistics.preprocessing.IngestionPipeline;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -15,19 +15,16 @@ public class DataIngestionApp {
         System.out.println("   HUMANE LOGISTICS - DATA INGESTION TOOL");
         System.out.println("==========================================");
 
-        // Initialize Services
         ApplicationBootstrap.initialize();
 
-        // FIXED: Get service directly from Bootstrap (Dependency Injection ready)
-        // Instead of using ServiceLocator.get()
-        AnalysisService service = ApplicationBootstrap.getAnalysisService();
+        // FIXED: Use getIngestionPipeline() instead of getAnalysisService()
+        IngestionPipeline pipeline = ApplicationBootstrap.getIngestionPipeline();
         AppConfig config = AppConfig.getInstance();
 
         Scanner scanner = new Scanner(System.in);
 
-        // Configuration inputs
+        // --- Configuration ---
         System.out.println("--- Configuration ---");
-
         System.out.print("Enter Search Topic (default: " + config.getDefaultTopic() + "): ");
         String topicInput = scanner.nextLine().trim();
         String topic = topicInput.isEmpty() ? config.getDefaultTopic() : topicInput;
@@ -57,22 +54,22 @@ public class DataIngestionApp {
 
         String choice = scanner.nextLine().trim();
 
-        // Execution Logic
+        // Execution Logic - UPDATED to use pipeline
         if (choice.equals("1")) {
             System.out.println("\n>>> STARTING SEARCH ONLY <<<");
-            service.clearCollectors();
-            service.registerCollectors(new GoogleNewsCollector());
-            service.processNewData(topic, startDate, endDate, false);
+            pipeline.clearCollectors();
+            pipeline.registerCollectors(new GoogleNewsCollector());
+            pipeline.processNewData(topic, startDate, endDate, false);
         }
         else if (choice.equals("2")) {
             System.out.println("\n>>> STARTING FULL ANALYSIS <<<");
-            service.clearCollectors();
-            service.registerCollectors(new GoogleNewsCollector());
-            service.processNewData(topic, startDate, endDate, true);
+            pipeline.clearCollectors();
+            pipeline.registerCollectors(new GoogleNewsCollector());
+            pipeline.processNewData(topic, startDate, endDate, true);
         }
         else if (choice.equals("3")) {
             System.out.println("\n>>> STARTING ANALYSIS ONLY (Existing Data) <<<");
-            service.processExistingData(topic);
+            pipeline.processExistingData(topic);
         }
         else {
             System.out.println("Invalid choice. Exiting.");

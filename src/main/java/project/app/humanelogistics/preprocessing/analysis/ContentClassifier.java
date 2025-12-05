@@ -1,4 +1,4 @@
-package project.app.humanelogistics.preprocessing;
+package project.app.humanelogistics.preprocessing.analysis;
 
 import project.app.humanelogistics.model.DamageCategory;
 

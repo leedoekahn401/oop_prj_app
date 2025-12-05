@@ -1,4 +1,4 @@
-package project.app.humanelogistics.preprocessing;
+package project.app.humanelogistics.preprocessing.collector;
 
 import project.app.humanelogistics.model.Media;
 import java.util.List;

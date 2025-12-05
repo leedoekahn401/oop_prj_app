@@ -1,4 +1,4 @@
-package project.app.humanelogistics.preprocessing;
+package project.app.humanelogistics.preprocessing.collector;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

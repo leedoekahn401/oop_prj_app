@@ -1,4 +1,4 @@
-package project.app.humanelogistics.service;
+package project.app.humanelogistics.preprocessing.analysis;
 
 public class KeywordSentimentAnalyzer implements SentimentAnalyzer {
 
