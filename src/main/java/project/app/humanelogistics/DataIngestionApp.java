@@ -32,7 +32,7 @@ public class DataIngestionApp {
         LocalDate today = LocalDate.now();
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("M/d/yyyy");
         String defaultStart = "9/4/2024";
-        String defaultEnd = today.format(fmt);
+        String defaultEnd = "9/10/2024";
 
         System.out.print("Enter Start Date [M/d/yyyy] (default: " + defaultStart + "): ");
         String startInput = scanner.nextLine().trim();

@@ -20,8 +20,6 @@ public class NewsIngestionTask {
 
             MediaRepository newsRepo = factory.getNewsRepository();
 
-            // 2. COLLECT
-            // We use the GoogleNewsCollector which returns a list of Medias (specifically News objects)
             DataCollector collector = new GoogleNewsCollector();
 
             String query = "Typhoon Yagi Bão Yagi Vietnam news";

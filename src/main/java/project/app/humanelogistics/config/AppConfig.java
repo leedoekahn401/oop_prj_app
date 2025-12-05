@@ -20,9 +20,8 @@ public class AppConfig {
             System.err.println("Warning: .env file not found");
         }
 
-        // Load all configurations
         properties.setProperty("db.connection",
-                getEnvValue(dotenv, "DB_CONNECTION_STRING", getDefaultDbConnection()));
+                getEnvValue(dotenv, "DB_CONNECTION_STRING", getDbConnection()));
         properties.setProperty("db.name",
                 getEnvValue(dotenv, "DB_NAME", "storm_data"));
         properties.setProperty("api.key",
@@ -42,16 +41,13 @@ public class AppConfig {
         return systemValue != null ? systemValue : defaultValue;
     }
 
-    private String getDefaultDbConnection() {
-        return "mongodb+srv://ducanh4012006_db_user:5zEVVC3o7Sjnl2le@cluster0.dwzpibi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-    }
 
     public static AppConfig getInstance() {
         return INSTANCE;
     }
 
     public String getDbConnection() {
-        return properties.getProperty("db.connection");
+        return "mongodb+srv://ducanh4012006_db_user:5zEVVC3o7Sjnl2le@cluster0.dwzpibi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
     }
 
     public String getDbName() {
