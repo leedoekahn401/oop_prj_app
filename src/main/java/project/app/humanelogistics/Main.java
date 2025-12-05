@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import project.app.humanelogistics.controller.DashboardController;
 
 import java.io.IOException;
 
@@ -11,7 +12,7 @@ public class Main extends Application {
 
     @Override
     public void init() throws Exception {
-        // FIXED: Initialize services before UI
+        // 1. Initialize all services
         ApplicationBootstrap.initialize();
     }
 
@@ -20,11 +21,32 @@ public class Main extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(
                 Main.class.getResource("hello-view.fxml")
         );
-        Scene scene = new Scene(fxmlLoader.load(), 1200, 800);
+
+        // 2. DEFINE THE CONTROLLER FACTORY
+        // This tells JavaFX: "When you need a Controller, ask me first."
+        fxmlLoader.setControllerFactory(controllerClass -> {
+
+            if (controllerClass == DashboardController.class) {
+                // INJECT DEPENDENCIES HERE
+                return new DashboardController(
+                        ApplicationBootstrap.getDashboardService(),
+                        ApplicationBootstrap.getNavigationService(),
+                        ApplicationBootstrap.getChartService()
+                );
+            }
+
+            // Default behavior for other controllers (like InformationButtonController)
+            try {
+                return controllerClass.getDeclaredConstructor().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Could not create controller: " + controllerClass.getName(), e);
+            }
+        });
+
+        Scene scene = new Scene(fxmlLoader.load(), 1280, 800);
         stage.setTitle("Humane Logistics Data Application");
         stage.setScene(scene);
 
-        // Handle window close
         stage.setOnCloseRequest(event -> {
             ApplicationBootstrap.cleanup();
         });

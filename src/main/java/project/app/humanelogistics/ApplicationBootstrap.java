@@ -1,28 +1,27 @@
 package project.app.humanelogistics;
 
 import project.app.humanelogistics.config.AppConfig;
-import project.app.humanelogistics.config.ServiceLocator;
 import project.app.humanelogistics.factory.RepositoryFactory;
-import project.app.humanelogistics.preprocessing.ContentClassifier; // Added Import
+import project.app.humanelogistics.preprocessing.ContentClassifier;
 import project.app.humanelogistics.preprocessing.GeminiDamageClassifier;
 import project.app.humanelogistics.preprocessing.SentimentGrade;
 import project.app.humanelogistics.service.*;
 
-/**
- * FIXED: Centralized initialization with proper dependency injection
- * Call this BEFORE launching JavaFX application
- */
 public class ApplicationBootstrap {
 
     private static RepositoryFactory repositoryFactory;
+
+    // Exposed Services for Dependency Injection
+    private static DashboardService dashboardService;
+    private static NavigationService navigationService;
+    private static ChartService chartService;
+    private static AnalysisService analysisService;
 
     public static void initialize() {
         System.out.println("Initializing Humane Logistics Application...");
 
         try {
             AppConfig config = AppConfig.getInstance();
-
-            // Create factories
             repositoryFactory = new RepositoryFactory(config);
 
             // Create core services
@@ -30,8 +29,7 @@ public class ApplicationBootstrap {
             ContentClassifier damageClassifier = new GeminiDamageClassifier();
             SummaryGenerator summaryGenerator = new GeminiSummaryGenerator();
 
-            // Create analysis service
-            AnalysisService analysisService = new AnalysisService(
+            analysisService = new AnalysisService(
                     sentimentAnalyzer,
                     damageClassifier,
                     summaryGenerator
@@ -40,27 +38,16 @@ public class ApplicationBootstrap {
             analysisService.addRepository("News", repositoryFactory.getNewsRepository());
             analysisService.addRepository("Social Posts", repositoryFactory.getSocialPostRepository());
 
-            // Create dashboard service
-            DashboardService dashboardService = new DashboardService(
+            dashboardService = new DashboardService(
                     analysisService,
                     config.getDefaultTopic(),
                     config.getAnalysisYear()
             );
 
-            // Create other services
-            NavigationService navigationService = new NavigationService();
-            ChartService chartService = new ChartService();
+            navigationService = new NavigationService();
+            chartService = new ChartService();
 
-            // Register all services
-            ServiceLocator.register(AnalysisService.class, analysisService);
-            ServiceLocator.register(DashboardService.class, dashboardService);
-            ServiceLocator.register(NavigationService.class, navigationService);
-            ServiceLocator.register(ChartService.class, chartService);
-            ServiceLocator.register(RepositoryFactory.class, repositoryFactory);
-
-            // Register shutdown hook
             registerShutdownHook();
-
             System.out.println("Application initialized successfully!");
 
         } catch (Exception e) {
@@ -70,9 +57,14 @@ public class ApplicationBootstrap {
         }
     }
 
+    // --- Getters for Main and DataIngestionApp to use ---
+    public static DashboardService getDashboardService() { return dashboardService; }
+    public static NavigationService getNavigationService() { return navigationService; }
+    public static ChartService getChartService() { return chartService; }
+    public static AnalysisService getAnalysisService() { return analysisService; }
+
     private static void registerShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Shutting down application...");
             cleanup();
         }));
     }
@@ -81,7 +73,7 @@ public class ApplicationBootstrap {
         if (repositoryFactory != null) {
             try {
                 repositoryFactory.close();
-                System.out.println("Resources cleaned up successfully.");
+                System.out.println("Resources cleaned up.");
             } catch (Exception e) {
                 System.err.println("Error during cleanup: " + e.getMessage());
             }

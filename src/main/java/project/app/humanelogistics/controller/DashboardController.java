@@ -8,7 +8,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
-import project.app.humanelogistics.config.ServiceLocator;
 import project.app.humanelogistics.model.SentimentScore;
 import project.app.humanelogistics.service.*;
 import project.app.humanelogistics.utils.AsyncTaskUtil;
@@ -34,16 +33,27 @@ public class DashboardController {
     @FXML private Label lblTopDamageCount;
     @FXML private Label lblSummary;
 
-    // Services
-    private DashboardService dashboardService;
-    private NavigationService navigationService;
-    private ChartService chartService;
+    // Services (Injected via Constructor)
+    private final DashboardService dashboardService;
+    private final NavigationService navigationService;
+    private final ChartService chartService;
+
+    // View Helper
     private DashboardViewManager viewManager;
+
+    // --- CONSTRUCTOR INJECTION ---
+    public DashboardController(DashboardService dashboardService,
+                               NavigationService navigationService,
+                               ChartService chartService) {
+        this.dashboardService = dashboardService;
+        this.navigationService = navigationService;
+        this.chartService = chartService;
+    }
 
     @FXML
     public void initialize() {
         try {
-            initializeServices();
+            // Note: Services are already initialized via constructor!
             initializeView();
             setupNavigation();
             loadDashboardData();
@@ -52,17 +62,8 @@ public class DashboardController {
         }
     }
 
-    private void initializeServices() {
-        this.dashboardService = ServiceLocator.get(DashboardService.class);
-        this.navigationService = ServiceLocator.get(NavigationService.class);
-        this.chartService = ServiceLocator.get(ChartService.class);
-    }
-
     private void initializeView() {
-        // Capture the default content from FXML before we modify the container
         ObservableList<Node> defaultNodes = FXCollections.observableArrayList(mainContent.getChildren());
-
-        // Initialize ViewManager with container AND default content
         this.viewManager = new DashboardViewManager(mainContent, defaultNodes);
     }
 
@@ -105,10 +106,6 @@ public class DashboardController {
         lblSummary.setText("Analyzing data...");
     }
 
-    // ========================================
-    // NAVIGATION HANDLERS
-    // ========================================
-
     private void showHome() {
         navigationService.setActiveButton(homeButton);
         viewManager.showDefault();
@@ -129,7 +126,6 @@ public class DashboardController {
                         throw new RuntimeException(e);
                     }
                 },
-                // FIXED: Used generic showChart method instead of missing showSentimentChart
                 chartData -> viewManager.showChart("Sentiment Trends", chartData.getChartFile()),
                 this::handleError
         );
@@ -162,13 +158,8 @@ public class DashboardController {
 
     private void showInformation() {
         navigationService.setActiveButton(informationButton);
-        // Pass empty list or fetch developers from a service if available
         viewManager.showDevelopers(Collections.emptyList());
     }
-
-    // ========================================
-    // ERROR HANDLING
-    // ========================================
 
     private void handleError(Throwable error) {
         error.printStackTrace();
@@ -177,62 +168,26 @@ public class DashboardController {
 
     private void handleInitializationError(Exception e) {
         e.printStackTrace();
-        if (lblTotalPosts != null) {
-            lblTotalPosts.setText("Init Error");
-        }
+        if (lblTotalPosts != null) lblTotalPosts.setText("Init Error");
     }
 
-    // ========================================
-    // DATA TRANSFER OBJECTS FOR CHARTS
-    // ========================================
-
+    // Chart DTOs
     public static class SentimentChartData {
         private final java.io.File chartFile;
-
-        public SentimentChartData(
-                org.jfree.data.time.TimeSeriesCollection dataset,
-                ChartService chartService) throws java.io.IOException {
-            this.chartFile = chartService.generateAndSaveChart(
-                    "Daily Sentiment Trend",
-                    "Date",
-                    "Score",
-                    dataset,
-                    "temp_sentiment.png"
-            );
+        public SentimentChartData(org.jfree.data.time.TimeSeriesCollection dataset, ChartService chartService) throws java.io.IOException {
+            this.chartFile = chartService.generateAndSaveChart("Daily Sentiment Trend", "Date", "Score", dataset, "temp_sentiment.png");
         }
-
-        public java.io.File getChartFile() {
-            return chartFile;
-        }
+        public java.io.File getChartFile() { return chartFile; }
     }
 
     public static class DamageChartData {
         private final java.io.File barChart;
         private final java.io.File pieChart;
-
-        public DamageChartData(
-                org.jfree.data.category.DefaultCategoryDataset dataset,
-                ChartService chartService) throws java.io.IOException {
-            this.barChart = chartService.generateBarChart(
-                    "Damage Counts",
-                    "Category",
-                    "Reports",
-                    dataset,
-                    "temp_damage_bar.png"
-            );
-            this.pieChart = chartService.generatePieChart(
-                    "Damage Distribution",
-                    dataset,
-                    "temp_damage_pie.png"
-            );
+        public DamageChartData(org.jfree.data.category.DefaultCategoryDataset dataset, ChartService chartService) throws java.io.IOException {
+            this.barChart = chartService.generateBarChart("Damage Counts", "Category", "Reports", dataset, "temp_damage_bar.png");
+            this.pieChart = chartService.generatePieChart("Damage Distribution", dataset, "temp_damage_pie.png");
         }
-
-        public java.io.File getBarChart() {
-            return barChart;
-        }
-
-        public java.io.File getPieChart() {
-            return pieChart;
-        }
+        public java.io.File getBarChart() { return barChart; }
+        public java.io.File getPieChart() { return pieChart; }
     }
 }

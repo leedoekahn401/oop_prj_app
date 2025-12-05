@@ -1,8 +1,6 @@
 package project.app.humanelogistics;
 
 import project.app.humanelogistics.config.AppConfig;
-import project.app.humanelogistics.config.ServiceLocator;
-import project.app.humanelogistics.factory.RepositoryFactory;
 import project.app.humanelogistics.preprocessing.GoogleNewsCollector;
 import project.app.humanelogistics.service.AnalysisService;
 
@@ -17,11 +15,12 @@ public class DataIngestionApp {
         System.out.println("   HUMANE LOGISTICS - DATA INGESTION TOOL");
         System.out.println("==========================================");
 
-        // FIXED: Use centralized initialization
+        // Initialize Services
         ApplicationBootstrap.initialize();
 
-        // Get services from container
-        AnalysisService service = ServiceLocator.get(AnalysisService.class);
+        // FIXED: Get service directly from Bootstrap (Dependency Injection ready)
+        // Instead of using ServiceLocator.get()
+        AnalysisService service = ApplicationBootstrap.getAnalysisService();
         AppConfig config = AppConfig.getInstance();
 
         Scanner scanner = new Scanner(System.in);
