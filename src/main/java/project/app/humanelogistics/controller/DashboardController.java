@@ -7,15 +7,13 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 import project.app.humanelogistics.model.SentimentScore;
 import project.app.humanelogistics.service.*;
 import project.app.humanelogistics.utils.AsyncTaskUtil;
-import project.app.humanelogistics.view.DashboardViewManager;
+import project.app.humanelogistics.view.DashboardView;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 
 public class DashboardController {
 
@@ -38,7 +36,7 @@ public class DashboardController {
     private final ChartService chartService;
 
     // View Helper
-    private DashboardViewManager viewManager;
+    private DashboardView viewManager;
 
     // --- CONSTRUCTOR INJECTION ---
     public DashboardController(DashboardService dashboardService,
@@ -63,7 +61,7 @@ public class DashboardController {
 
     private void initializeView() {
         ObservableList<Node> defaultNodes = FXCollections.observableArrayList(mainContent.getChildren());
-        this.viewManager = new DashboardViewManager(mainContent, defaultNodes);
+        this.viewManager = new DashboardView(mainContent, defaultNodes);
     }
 
     private void setupNavigation() {

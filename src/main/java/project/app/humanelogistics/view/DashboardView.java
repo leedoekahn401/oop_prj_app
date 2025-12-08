@@ -11,12 +11,12 @@ import project.app.humanelogistics.factory.UIFactory;
 import java.io.File;
 import java.util.List;
 
-public class DashboardViewManager {
+public class DashboardView {
 
     private final VBox container;
     private final ObservableList<Node> defaultContent;
 
-    public DashboardViewManager(VBox container, ObservableList<Node> defaultContent) {
+    public DashboardView(VBox container, ObservableList<Node> defaultContent) {
         this.container = container;
         this.defaultContent = defaultContent;
     }
