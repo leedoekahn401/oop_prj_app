@@ -4,11 +4,6 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import java.awt.*;
 
-/**
- * Helper class to satisfy Law of Demeter.
- * Instead of chaining calls deep into the JFreeChart library in the service,
- * we encapsulate the styling logic here.
- */
 public class ChartStyler {
     private final XYPlot plot;
 

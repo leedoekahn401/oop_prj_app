@@ -3,11 +3,7 @@ package project.app.humanelogistics.service;
 import javafx.scene.control.Label;
 import project.app.humanelogistics.model.SentimentScore;
 
-/**
- * "Tell, Don't Ask" Helper.
- * Encapsulates the logic of how a SentimentScore should be displayed in the UI.
- * The Controller should just tell this class to "apply" the style.
- */
+
 public class SentimentDisplay {
     private final SentimentScore score;
 

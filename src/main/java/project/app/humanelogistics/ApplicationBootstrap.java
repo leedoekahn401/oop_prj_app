@@ -72,9 +72,8 @@ public class ApplicationBootstrap {
         if (repositoryFactory != null) {
             try {
                 repositoryFactory.close();
-                System.out.println("Resources cleaned up.");
             } catch (Exception e) {
-                System.err.println("Error during cleanup: " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }

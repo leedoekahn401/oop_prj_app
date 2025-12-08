@@ -22,8 +22,7 @@ public class DashboardController {
     // FXML Injected Components
     @FXML private VBox mainContent;
     @FXML private Button homeButton;
-    @FXML private Button sentimentButton;
-    @FXML private Button inventoryButton;
+    // Removed specific sentiment/inventory buttons
     @FXML private Button informationButton;
 
     @FXML private Label lblTotalPosts;
@@ -69,20 +68,61 @@ public class DashboardController {
 
     private void setupNavigation() {
         navigationService.registerButtons(
-                homeButton, sentimentButton, inventoryButton, informationButton
+                homeButton, informationButton
         );
 
         homeButton.setOnAction(e -> showHome());
-        sentimentButton.setOnAction(e -> showSentiment());
-        inventoryButton.setOnAction(e -> showDamage());
         informationButton.setOnAction(e -> showInformation());
     }
 
     private void loadDashboardData() {
         setLoadingState();
+
+        // 1. Load Statistics & Text Summary first
         AsyncTaskUtil.execute(
                 () -> dashboardService.getDashboardStats(),
-                this::updateDashboardUI,
+                stats -> {
+                    updateDashboardUI(stats);
+                    // 2. After stats are loaded, trigger chart generation
+                    loadCharts();
+                },
+                this::handleError
+        );
+    }
+
+    private void loadCharts() {
+        // Load Sentiment Chart
+        AsyncTaskUtil.execute(
+                () -> {
+                    try {
+                        return new SentimentChartData(
+                                dashboardService.getSentimentTimeSeries(),
+                                chartService
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                chartData -> viewManager.addDashboardChart("Sentiment Trends", chartData.getChartFile()),
+                this::handleError
+        );
+
+        // Load Damage Charts
+        AsyncTaskUtil.execute(
+                () -> {
+                    try {
+                        return new DamageChartData(
+                                dashboardService.getDamageDataset(),
+                                chartService
+                        );
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                chartData -> {
+                    viewManager.addDashboardChart("Damage Distribution", chartData.getPieChart());
+                    viewManager.addDashboardChart("Damage Counts", chartData.getBarChart());
+                },
                 this::handleError
         );
     }
@@ -109,51 +149,6 @@ public class DashboardController {
     private void showHome() {
         navigationService.setActiveButton(homeButton);
         viewManager.showDefault();
-    }
-
-    private void showSentiment() {
-        navigationService.setActiveButton(sentimentButton);
-        viewManager.showLoading("Generating Sentiment Analysis...");
-
-        AsyncTaskUtil.execute(
-                () -> {
-                    try {
-                        return new SentimentChartData(
-                                dashboardService.getSentimentTimeSeries(),
-                                chartService
-                        );
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                chartData -> viewManager.showChart("Sentiment Trends", chartData.getChartFile()),
-                this::handleError
-        );
-    }
-
-    private void showDamage() {
-        navigationService.setActiveButton(inventoryButton);
-        viewManager.showLoading("Analyzing Damage Reports...");
-
-        AsyncTaskUtil.execute(
-                () -> {
-                    try {
-                        return new DamageChartData(
-                                dashboardService.getDamageDataset(),
-                                chartService
-                        );
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                },
-                chartData -> viewManager.showChartGallery("Damage Analysis",
-                        List.of(
-                                new Pair<>("Distribution", chartData.getPieChart()),
-                                new Pair<>("Counts", chartData.getBarChart())
-                        )
-                ),
-                this::handleError
-        );
     }
 
     private void showInformation() {

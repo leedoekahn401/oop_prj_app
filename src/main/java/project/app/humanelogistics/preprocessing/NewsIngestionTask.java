@@ -14,8 +14,6 @@ public class NewsIngestionTask {
     public static void main(String[] args) {
         System.out.println("--- Starting News Ingestion Task ---");
 
-        // FIXED: Use RepositoryFactory to manage the MongoClient resource automatically.
-        // The try-with-resources block ensures the connection is closed when done.
         try (RepositoryFactory factory = new RepositoryFactory(AppConfig.getInstance())) {
 
             MediaRepository newsRepo = factory.getNewsRepository();
@@ -30,11 +28,9 @@ public class NewsIngestionTask {
             System.out.println("Target DB Collection: news");
             System.out.println("Query: " + query);
 
-            // Collect data
             List<Media> articles = collector.collect(query, startDate, endDate, 3);
             System.out.println("Fetched " + articles.size() + " articles.");
 
-            // 3. SAVE
             System.out.println("Saving to MongoDB...");
             int savedCount = 0;
             for (Media article : articles) {

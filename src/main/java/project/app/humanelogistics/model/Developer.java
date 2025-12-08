@@ -11,7 +11,15 @@ public class Developer {
         this.imagePath = imagePath;
     }
 
-    public String getName() { return name; }
-    public String getRole() { return role; }
-    public String getImagePath() { return imagePath; }
+    public String getName() {
+        return name;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
 }

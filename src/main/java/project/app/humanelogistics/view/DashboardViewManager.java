@@ -27,6 +27,20 @@ public class DashboardViewManager {
         }
     }
 
+    // --- NEW: Add chart to the Dashboard flow ---
+    public void addDashboardChart(String title, File chartFile) {
+        VBox chartBox = UIFactory.createChartContainer(title, chartFile);
+
+        // 1. Add to the 'defaultContent' memory so it persists if user navigates away and back
+        defaultContent.add(chartBox);
+
+        // 2. If we are currently on the dashboard, add it to the view immediately
+        // (Simple check: if container has the same items as defaultContent minus the new one)
+        if (!container.getChildren().contains(chartBox)) {
+            container.getChildren().add(chartBox);
+        }
+    }
+
     public void showLoading(String message) {
         container.getChildren().clear();
         container.getChildren().add(UIFactory.createLoadingText(message));
@@ -36,8 +50,6 @@ public class DashboardViewManager {
         container.getChildren().setAll(UIFactory.createErrorBox(message));
     }
 
-    // --- REFACTORED: Generic Method for Any Number of Charts ---
-    // Takes a List of Pairs (Chart Title -> Chart File)
     public void showChartGallery(String mainTitle, List<Pair<String, File>> charts) {
         container.getChildren().clear();
 

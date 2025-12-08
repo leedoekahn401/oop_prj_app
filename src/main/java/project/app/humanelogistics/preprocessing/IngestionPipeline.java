@@ -11,11 +11,6 @@ import project.app.humanelogistics.preprocessing.collector.DataCollector;
 
 import java.util.*;
 
-/**
- * Refactored AnalysisService.
- * Responsibility: Coordinating data ingestion and running analysis algorithms (Sentiment/Classification).
- * No longer responsible for Statistics or Reporting.
- */
 public class IngestionPipeline {
 
     private final Map<String, MediaRepository> repoMap = new LinkedHashMap<>();
@@ -86,7 +81,6 @@ public class IngestionPipeline {
     private void analyzeItem(Media item) {
         String textToAnalyze = item.getContent();
 
-        // 1. Fetch full content if URL exists
         String url = item.getUrl();
         if (url != null && !url.isEmpty() && url.startsWith("http")) {
             System.out.print("   [FETCHING] Reading article... ");
@@ -100,7 +94,6 @@ public class IngestionPipeline {
             }
         }
 
-        // 2. Run Sentiment Analysis
         try {
             double score = sentimentAnalyzer.analyzeScore(textToAnalyze);
             item.addAnalysisResult("sentiment", SentimentScore.of(score));
@@ -108,7 +101,6 @@ public class IngestionPipeline {
             System.err.println("Sentiment Error: " + e.getMessage());
         }
 
-        // 3. Run Damage Classification
         try {
             if (damageClassifier != null) {
                 DamageCategory cat = damageClassifier.classify(textToAnalyze);

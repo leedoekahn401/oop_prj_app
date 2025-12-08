@@ -22,12 +22,9 @@ public class Main extends Application {
                 Main.class.getResource("hello-view.fxml")
         );
 
-        // 2. DEFINE THE CONTROLLER FACTORY
-        // This tells JavaFX: "When you need a Controller, ask me first."
         fxmlLoader.setControllerFactory(controllerClass -> {
 
             if (controllerClass == DashboardController.class) {
-                // INJECT DEPENDENCIES HERE
                 return new DashboardController(
                         ApplicationBootstrap.getDashboardService(),
                         ApplicationBootstrap.getNavigationService(),
@@ -35,7 +32,6 @@ public class Main extends Application {
                 );
             }
 
-            // Default behavior for other controllers (like InformationButtonController)
             try {
                 return controllerClass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {

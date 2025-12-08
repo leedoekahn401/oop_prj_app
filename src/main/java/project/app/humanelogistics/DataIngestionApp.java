@@ -17,13 +17,11 @@ public class DataIngestionApp {
 
         ApplicationBootstrap.initialize();
 
-        // FIXED: Use getIngestionPipeline() instead of getAnalysisService()
         IngestionPipeline pipeline = ApplicationBootstrap.getIngestionPipeline();
         AppConfig config = AppConfig.getInstance();
 
         Scanner scanner = new Scanner(System.in);
 
-        // --- Configuration ---
         System.out.println("--- Configuration ---");
         System.out.print("Enter Search Topic (default: " + config.getDefaultTopic() + "): ");
         String topicInput = scanner.nextLine().trim();
@@ -44,8 +42,6 @@ public class DataIngestionApp {
 
         System.out.println("\nUsing Topic: " + topic);
         System.out.println("Date Range:  " + startDate + " -> " + endDate);
-
-        // Interactive Menu
         System.out.println("\n--- Select Mode ---");
         System.out.println("   [1] Search Only  (Collect data, No AI)");
         System.out.println("   [2] Search + Analyze (Full Cycle)");
@@ -53,8 +49,6 @@ public class DataIngestionApp {
         System.out.print("Enter choice: ");
 
         String choice = scanner.nextLine().trim();
-
-        // Execution Logic - UPDATED to use pipeline
         if (choice.equals("1")) {
             System.out.println("\n>>> STARTING SEARCH ONLY <<<");
             pipeline.clearCollectors();

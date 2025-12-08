@@ -41,15 +41,15 @@
                     <!-- You can use font-awesome icons here if library is loaded, using text for now -->
                 </graphic>
             </Button>
-            <Button fx:id="sentimentButton" text="Sentiment Analysis" styleClass="nav-button" maxWidth="Infinity"/>
-            <Button fx:id="inventoryButton" text="Damage Assessment" styleClass="nav-button" maxWidth="Infinity"/>
+
+            <!-- Removed separate analysis pages -->
+
             <Button fx:id="informationButton" text="Information" styleClass="nav-button" maxWidth="Infinity"/>
         </VBox>
     </left>
 
     <!-- MAIN CONTENT AREA -->
     <center>
-        <!-- FIXED: Wrapped content in ScrollPane to enable scrolling -->
         <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-background: transparent;">
             <content>
                 <VBox spacing="20" styleClass="main-layout">
@@ -95,7 +95,7 @@
                             </VBox>
                         </GridPane>
 
-                        <!-- 2. NEW: AI SUMMARY SECTION -->
+                        <!-- 2. AI SUMMARY SECTION -->
                         <VBox styleClass="summary-card" VBox.vgrow="NEVER">
                             <HBox alignment="CENTER_LEFT" spacing="10">
                                 <!-- Simple Icon using Label for now -->
@@ -106,6 +106,9 @@
                                    wrapText="true"
                                    styleClass="summary-text"/>
                         </VBox>
+
+                        <!-- 3. CHARTS will be appended here dynamically by the controller -->
+
                     </VBox>
                 </VBox>
             </content>

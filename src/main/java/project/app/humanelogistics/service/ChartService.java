@@ -42,7 +42,6 @@ public class ChartService {
         chart.setBackgroundPaint(Color.WHITE);
         chart.getCategoryPlot().setBackgroundPaint(Color.WHITE);
 
-        // Simple bar styling
         chart.getCategoryPlot().getRenderer().setSeriesPaint(0, new Color(52, 152, 219));
 
         File file = new File(filepath);
@@ -50,9 +49,7 @@ public class ChartService {
         return file;
     }
 
-    // THIS METHOD WAS LIKELY MISSING/EMPTY IN YOUR LOCAL FILE
     public File generatePieChart(String title, DefaultCategoryDataset dataset, String filepath) throws IOException {
-        // 1. Convert Category Data to Pie Data
         DefaultPieDataset pieData = new DefaultPieDataset();
         for (int i = 0; i < dataset.getColumnCount(); i++) {
             Comparable key = dataset.getColumnKey(i);
@@ -60,16 +57,13 @@ public class ChartService {
             pieData.setValue(key, value);
         }
 
-        // 2. Create Chart
         JFreeChart chart = ChartFactory.createPieChart(title, pieData, true, true, false);
         chart.setBackgroundPaint(Color.WHITE);
 
-        // 3. Style Plot
         PiePlot plot = (PiePlot) chart.getPlot();
         plot.setBackgroundPaint(Color.WHITE);
         plot.setOutlineVisible(false);
 
-        // 4. Configure Labels (e.g. "Housing Damage")
         plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0}"));
         plot.setLabelBackgroundPaint(new Color(255, 255, 255, 200));
         plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 11));

@@ -23,10 +23,9 @@ public class DashboardService {
         int totalPosts = statisticsService.getTotalPostCount(topic);
         double avgSentiment = statisticsService.getOverallAverageScore(topic);
 
-        // This logic is now inside StatisticsService
         String topCategory = statisticsService.getTopDamageCategory(topic);
 
-        // Use a simpler approach to get the count for the top category
+
         DefaultCategoryDataset damageData = statisticsService.getDamageData(topic);
         int topCount = getCountForCategory(damageData, topCategory);
 

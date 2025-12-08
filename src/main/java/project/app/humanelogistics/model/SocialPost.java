@@ -5,10 +5,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-/**
- * Refactored SocialPost.
- * Uses immutable list for comments to ensure thread safety and encapsulation.
- */
+
 public class SocialPost extends Media {
     private final List<String> comments;
 
@@ -26,8 +23,4 @@ public class SocialPost extends Media {
         return "Social Media";
     }
 
-    // Domain Behavior
-    public int getEngagementLevel() {
-        return comments.size();
-    }
 }

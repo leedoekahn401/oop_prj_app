@@ -19,8 +19,6 @@ public class GeminiSummaryGenerator implements SummaryGenerator {
     @Override
     public String generateSummary(String topic, int postCount, double avgSentiment, String topDamageType) {
         if (client == null) return "AI Summary unavailable (No API Key).";
-
-        // Construct a structured prompt for the AI
         String prompt = String.format(
                 "You are a disaster relief analyst. Write a concise 2-sentence executive summary for the topic '%s'.\n" +
                         "Data Context:\n" +
@@ -33,8 +31,7 @@ public class GeminiSummaryGenerator implements SummaryGenerator {
         );
 
         try {
-            // Using the flash model for speed
-            GenerateContentResponse response = client.models.generateContent("gemini-2.0-flash", prompt, null);
+            GenerateContentResponse response = client.models.generateContent("gemini-2.5-flash", prompt, null);
             String text = response.text();
             return text != null ? text.trim() : "Analysis failed.";
         } catch (Exception e) {

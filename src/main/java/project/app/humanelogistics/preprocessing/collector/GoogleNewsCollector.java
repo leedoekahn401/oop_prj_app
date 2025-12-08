@@ -69,7 +69,6 @@ public class GoogleNewsCollector implements DataCollector {
         if (collectedPosts.isEmpty()) {
             collectedPosts = generateMockData(query);
         }
-
         return collectedPosts;
     }
 
@@ -82,11 +81,9 @@ public class GoogleNewsCollector implements DataCollector {
 
             String rawLink = el.attr("abs:href");
             String cleanLink = cleanGoogleUrl(rawLink);
-
             String source = el.select("div.MgUUmf, span.NUnG9d").text();
 
             if(!title.isEmpty() && !cleanLink.isEmpty()) {
-                // Fixed: Removed the sentiment (0.0) argument to match the new News constructor
                 posts.add(new News(topic, title, source, cleanLink, forceDate));
             }
         }
@@ -112,7 +109,6 @@ public class GoogleNewsCollector implements DataCollector {
     private List<Media> generateMockData(String topic) {
         List<Media> mocks = new ArrayList<>();
         long now = System.currentTimeMillis();
-        // Fixed: Removed the sentiment (0.0) argument to match the new News constructor
         mocks.add(new News(topic, "Typhoon Yagi Impact", "BBC", "https://www.bbc.com/news/world-asia-68000000", new Date(now)));
         return mocks;
     }
