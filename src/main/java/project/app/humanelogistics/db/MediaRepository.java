@@ -1,13 +1,12 @@
 package project.app.humanelogistics.db;
 
-import project.app.humanelogistics.model.Media;
+import project.app.humanelogistics.model.MediaAnalysis;
 import java.util.List;
 
 public interface MediaRepository {
-    void save(Media item);
+    void save(MediaAnalysis analysis);
 
-    void updateSentiment(Media item, Double sentiment);
-    void updateAnalysis(Media item);
+    void updateAnalysis(MediaAnalysis analysis);
 
-    List<Media> findByTopic(String topic);
+    List<MediaAnalysis> findByTopic(String topic);
 }

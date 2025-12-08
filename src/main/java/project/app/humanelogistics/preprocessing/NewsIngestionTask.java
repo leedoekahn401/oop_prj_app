@@ -4,6 +4,7 @@ import project.app.humanelogistics.config.AppConfig;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.factory.RepositoryFactory;
 import project.app.humanelogistics.model.Media;
+import project.app.humanelogistics.model.MediaAnalysis;
 import project.app.humanelogistics.preprocessing.collector.DataCollector;
 import project.app.humanelogistics.preprocessing.collector.GoogleNewsCollector;
 
@@ -17,7 +18,6 @@ public class NewsIngestionTask {
         try (RepositoryFactory factory = new RepositoryFactory(AppConfig.getInstance())) {
 
             MediaRepository newsRepo = factory.getNewsRepository();
-
             DataCollector collector = new GoogleNewsCollector();
 
             String query = "Typhoon Yagi Bão Yagi Vietnam news";
@@ -35,7 +35,8 @@ public class NewsIngestionTask {
             int savedCount = 0;
             for (Media article : articles) {
                 try {
-                    newsRepo.save(article);
+                    // Wrap in analysis before saving
+                    newsRepo.save(MediaAnalysis.unprocessed(article));
                     savedCount++;
                 } catch (Exception e) {
                     System.err.println("Error saving article: " + e.getMessage());

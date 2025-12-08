@@ -6,6 +6,7 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.model.DamageCategory;
+import project.app.humanelogistics.model.MediaAnalysis; // Using Wrapper
 import project.app.humanelogistics.model.Media;
 
 import java.time.LocalDate;
@@ -37,10 +38,10 @@ public class StatisticsService {
         double totalScore = 0.0;
         int count = 0;
         for (MediaRepository repo : repoMap.values()) {
-            List<Media> posts = repo.findByTopic(topic);
-            for (Media post : posts) {
-                if (post.getSentiment().getValue() != 0.0) {
-                    totalScore += post.getSentiment().getValue();
+            List<MediaAnalysis> items = repo.findByTopic(topic);
+            for (MediaAnalysis item : items) {
+                if (item.getSentiment().getValue() != 0.0) {
+                    totalScore += item.getSentiment().getValue();
                     count++;
                 }
             }
@@ -53,17 +54,20 @@ public class StatisticsService {
         for (Map.Entry<String, MediaRepository> entry : repoMap.entrySet()) {
             String seriesName = entry.getKey();
             MediaRepository repo = entry.getValue();
-            List<Media> posts = repo.findByTopic(topic);
+            List<MediaAnalysis> items = repo.findByTopic(topic);
+
             Map<LocalDate, Double> dailyTotal = new TreeMap<>();
             Map<LocalDate, Integer> dailyCount = new HashMap<>();
             boolean hasData = false;
 
-            for (Media post : posts) {
-                if (post.getTimestamp() == null || post.getSentiment().getValue() == 0.0) continue;
-                LocalDate localDate = post.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            for (MediaAnalysis item : items) {
+                Media media = item.getMedia();
+                if (media.getTimestamp() == null || item.getSentiment().getValue() == 0.0) continue;
+
+                LocalDate localDate = media.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                 if (targetYear != 0 && localDate.getYear() != targetYear) continue;
 
-                dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + post.getSentiment().getValue());
+                dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + item.getSentiment().getValue());
                 dailyCount.put(localDate, dailyCount.getOrDefault(localDate, 0) + 1);
                 hasData = true;
             }
@@ -83,9 +87,9 @@ public class StatisticsService {
         Map<DamageCategory, Integer> counts = new HashMap<>();
 
         for (MediaRepository repo : repoMap.values()) {
-            List<Media> posts = repo.findByTopic(topic);
-            for (Media post : posts) {
-                DamageCategory type = post.getDamageCategory();
+            List<MediaAnalysis> items = repo.findByTopic(topic);
+            for (MediaAnalysis item : items) {
+                DamageCategory type = item.getDamageCategory();
                 if (type != null && type != DamageCategory.UNKNOWN) {
                     counts.put(type, counts.getOrDefault(type, 0) + 1);
                 }
