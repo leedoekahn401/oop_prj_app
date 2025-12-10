@@ -7,6 +7,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.util.Pair;
+import project.app.humanelogistics.model.Developer;
 import project.app.humanelogistics.model.SentimentScore;
 import project.app.humanelogistics.service.*;
 import project.app.humanelogistics.utils.AsyncTaskUtil;
@@ -14,13 +16,13 @@ import project.app.humanelogistics.view.DashboardView;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 public class DashboardController {
 
     // FXML Injected Components
     @FXML private VBox mainContent;
     @FXML private Button homeButton;
-    // Removed specific sentiment/inventory buttons
     @FXML private Button informationButton;
 
     @FXML private Label lblTotalPosts;
@@ -50,7 +52,6 @@ public class DashboardController {
     @FXML
     public void initialize() {
         try {
-            // Note: Services are already initialized via constructor!
             initializeView();
             setupNavigation();
             loadDashboardData();
@@ -60,28 +61,36 @@ public class DashboardController {
     }
 
     private void initializeView() {
+        // Initialize ViewManager
         ObservableList<Node> defaultNodes = FXCollections.observableArrayList(mainContent.getChildren());
         this.viewManager = new DashboardView(mainContent, defaultNodes);
+
+        // Bind the injected UI widgets to the ViewManager
+        // The Controller "owns" the injection, but delegates "management" to ViewManager
+        this.viewManager.bindStatsWidgets(
+                lblTotalPosts, lblSentimentScore, lblSentimentLabel,
+                lblTopDamage, lblTopDamageCount, lblSummary
+        );
     }
 
     private void setupNavigation() {
-        navigationService.registerButtons(
-                homeButton, informationButton
-        );
-
+        navigationService.registerButtons(homeButton, informationButton);
         homeButton.setOnAction(e -> showHome());
         informationButton.setOnAction(e -> showInformation());
     }
 
     private void loadDashboardData() {
-        setLoadingState();
+        // Delegate view state logic
+        viewManager.showStatsLoading();
 
-        // 1. Load Statistics & Text Summary first
+        // 1. Load Statistics & Text Summary
         AsyncTaskUtil.execute(
                 () -> dashboardService.getDashboardStats(),
                 stats -> {
-                    updateDashboardUI(stats);
-                    // 2. After stats are loaded, trigger chart generation
+                    // Delegate view update logic
+                    viewManager.updateDashboardStats(stats);
+
+                    // 2. Trigger chart generation
                     loadCharts();
                 },
                 this::handleError
@@ -125,25 +134,6 @@ public class DashboardController {
         );
     }
 
-    private void updateDashboardUI(DashboardStats stats) {
-        lblTotalPosts.setText(String.valueOf(stats.getTotalPosts()));
-        lblSentimentScore.setText(String.format("%.2f", stats.getAvgSentiment()));
-
-        SentimentScore sentimentScore = SentimentScore.of(stats.getAvgSentiment());
-        new SentimentDisplay(sentimentScore).applyTo(lblSentimentLabel);
-
-        lblTopDamage.setText(stats.getTopDamageCategory());
-        lblTopDamageCount.setText(stats.getTopDamageCount() + " reports");
-        lblSummary.setText(stats.getAiSummary());
-    }
-
-    private void setLoadingState() {
-        lblTotalPosts.setText("Loading...");
-        lblSentimentScore.setText("--");
-        lblSentimentLabel.setText("...");
-        lblSummary.setText("Analyzing data...");
-    }
-
     private void showHome() {
         navigationService.setActiveButton(homeButton);
         viewManager.showDefault();
@@ -151,7 +141,13 @@ public class DashboardController {
 
     private void showInformation() {
         navigationService.setActiveButton(informationButton);
-        viewManager.showDevelopers(Collections.emptyList());
+
+        List<Developer> developers = List.of(
+                new Developer("Hoang Hai Nam", "Developer", "/project/app/humanelogistics/picture1.png"),
+                new Developer("Le Duc Anh", "Developer", "/project/app/humanelogistics/picture2.png")
+        );
+
+        viewManager.showDevelopers(developers);
     }
 
     private void handleError(Throwable error) {
@@ -161,6 +157,7 @@ public class DashboardController {
 
     private void handleInitializationError(Exception e) {
         e.printStackTrace();
+        // Fallback if viewManager failed
         if (lblTotalPosts != null) lblTotalPosts.setText("Init Error");
     }
 

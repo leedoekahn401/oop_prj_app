@@ -30,6 +30,10 @@ public class AppConfig {
                 getEnvValue(dotenv, "DEFAULT_TOPIC", "Typhoon Yagi"));
         properties.setProperty("app.year",
                 getEnvValue(dotenv, "ANALYSIS_YEAR", "2024"));
+
+        // Load Gemini Model from Env or Default
+        properties.setProperty("gemini.model",
+                getEnvValue(dotenv, "GEMINI_MODEL", "gemini-2.0-flash"));
     }
 
     private String getEnvValue(Dotenv dotenv, String key, String defaultValue) {
@@ -64,5 +68,9 @@ public class AppConfig {
 
     public int getAnalysisYear() {
         return Integer.parseInt(properties.getProperty("app.year"));
+    }
+
+    public String getGeminiModel() {
+        return properties.getProperty("gemini.model");
     }
 }

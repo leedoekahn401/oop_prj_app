@@ -1,24 +1,18 @@
 package project.app.humanelogistics.service;
 
-import com.google.genai.Client;
-import com.google.genai.types.GenerateContentResponse;
-import project.app.humanelogistics.config.AppConfig;
+import project.app.humanelogistics.config.AIConfig;
+import project.app.humanelogistics.config.AIConfig.ModelType;
 
 public class GeminiSummaryGenerator implements SummaryGenerator {
-    private final Client client;
+    private final AIConfig aiService;
 
     public GeminiSummaryGenerator() {
-        String apiKey = AppConfig.getInstance().getApiKey();
-        if (apiKey != null && !apiKey.isEmpty()) {
-            this.client = Client.builder().apiKey(apiKey).build();
-        } else {
-            this.client = null;
-        }
+        this.aiService = new AIConfig();
     }
 
     @Override
     public String generateSummary(String topic, int postCount, double avgSentiment, String topDamageType) {
-        if (client == null) return "AI Summary unavailable (No API Key).";
+        // Construct a structured prompt for the AI
         String prompt = String.format(
                 "You are a disaster relief analyst. Write a concise 2-sentence executive summary for the topic '%s'.\n" +
                         "Data Context:\n" +
@@ -30,13 +24,14 @@ public class GeminiSummaryGenerator implements SummaryGenerator {
                 topic, postCount, avgSentiment, topDamageType
         );
 
-        try {
-            GenerateContentResponse response = client.models.generateContent("gemini-2.5-flash", prompt, null);
-            String text = response.text();
-            return text != null ? text.trim() : "Analysis failed.";
-        } catch (Exception e) {
-            System.err.println("Summary Gen Error: " + e.getMessage());
+        // Use the UnifiedAIService to generate content
+        // You can easily switch models here by changing ModelType.GEMINI_FLASH to another type
+        String result = aiService.ask(ModelType.GEMINI_FLASH, prompt);
+
+        if (result.startsWith("Error") || result.isEmpty()) {
             return "Unable to generate summary at this time.";
         }
+
+        return result;
     }
 }

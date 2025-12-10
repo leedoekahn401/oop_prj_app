@@ -4,8 +4,8 @@ import project.app.humanelogistics.config.AppConfig;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.factory.RepositoryFactory;
 import project.app.humanelogistics.preprocessing.analysis.ContentClassifier;
-import project.app.humanelogistics.preprocessing.analysis.GeminiDamageClassifier;
-import project.app.humanelogistics.preprocessing.IngestionPipeline; // NEW IMPORT
+import project.app.humanelogistics.preprocessing.analysis.DamageClassifier; // Updated Import
+import project.app.humanelogistics.preprocessing.IngestionPipeline;
 import project.app.humanelogistics.preprocessing.analysis.SentimentGrade;
 import project.app.humanelogistics.preprocessing.analysis.SentimentAnalyzer;
 import project.app.humanelogistics.service.*;
@@ -28,15 +28,20 @@ public class ApplicationBootstrap {
 
             MediaRepository newsRepo = repositoryFactory.getNewsRepository();
             MediaRepository socialRepo = repositoryFactory.getSocialPostRepository();
+
+            // Initialize AI Analyzers using the new classes that use UnifiedAIService
             SentimentAnalyzer sentimentAnalyzer = new SentimentGrade();
-            ContentClassifier damageClassifier = new GeminiDamageClassifier();
+            ContentClassifier damageClassifier = new DamageClassifier(); // Updated class usage
+
             ingestionPipeline = new IngestionPipeline(sentimentAnalyzer, damageClassifier);
             ingestionPipeline.addRepository("News", newsRepo);
             ingestionPipeline.addRepository("Social Posts", socialRepo);
+
             SummaryGenerator summaryGenerator = new GeminiSummaryGenerator();
             statisticsService = new StatisticsService(summaryGenerator);
             statisticsService.addRepository("News", newsRepo);
             statisticsService.addRepository("Social Posts", socialRepo);
+
             dashboardService = new DashboardService(
                     statisticsService,
                     config.getDefaultTopic(),
@@ -72,8 +77,9 @@ public class ApplicationBootstrap {
         if (repositoryFactory != null) {
             try {
                 repositoryFactory.close();
+                System.out.println("Resources cleaned up.");
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println("Error during cleanup: " + e.getMessage());
             }
         }
     }

@@ -8,7 +8,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
-public class DataIngestionApp {
+public class
+DataIngestionApp {
 
     public static void main(String[] args) {
         System.out.println("==========================================");
@@ -23,6 +24,7 @@ public class DataIngestionApp {
         Scanner scanner = new Scanner(System.in);
 
         System.out.println("--- Configuration ---");
+
         System.out.print("Enter Search Topic (default: " + config.getDefaultTopic() + "): ");
         String topicInput = scanner.nextLine().trim();
         String topic = topicInput.isEmpty() ? config.getDefaultTopic() : topicInput;
