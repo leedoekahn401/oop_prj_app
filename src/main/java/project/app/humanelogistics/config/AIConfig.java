@@ -7,7 +7,7 @@ public class AIConfig {
 
     // Define supported models here so you don't have magic strings everywhere
     public enum ModelType {
-        GEMINI_FLASH("gemini-2.5-flash-lite"),
+        GEMINI_FLASH("gemini-2.5-flash"),
         GEMINI_PRO("gemini-2.0-pro"),
         GPT_4("gpt-4"),
         CLAUDE_3("claude-3-opus");

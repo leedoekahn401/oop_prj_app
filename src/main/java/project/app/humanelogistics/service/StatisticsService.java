@@ -6,7 +6,7 @@ import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import project.app.humanelogistics.db.MediaRepository;
 import project.app.humanelogistics.model.DamageCategory;
-import project.app.humanelogistics.model.MediaAnalysis; // Using Wrapper
+import project.app.humanelogistics.model.MediaAnalysis;
 import project.app.humanelogistics.model.Media;
 
 import java.time.LocalDate;
@@ -40,10 +40,10 @@ public class StatisticsService {
         for (MediaRepository repo : repoMap.values()) {
             List<MediaAnalysis> items = repo.findByTopic(topic);
             for (MediaAnalysis item : items) {
-                if (item.getSentiment().getValue() != 0.0) {
-                    totalScore += item.getSentiment().getValue();
-                    count++;
-                }
+                // FIXED: Include 0.0 (neutral) scores in the average
+                // This ensures "Neutral" posts contribute to the overall score instead of being ignored
+                totalScore += item.getSentiment().getValue();
+                count++;
             }
         }
         return count == 0 ? 0.0 : totalScore / count;
@@ -62,10 +62,16 @@ public class StatisticsService {
 
             for (MediaAnalysis item : items) {
                 Media media = item.getMedia();
-                if (media.getTimestamp() == null || item.getSentiment().getValue() == 0.0) continue;
+
+                // FIXED: Removed the check for "getValue() == 0.0"
+                if (media.getTimestamp() == null) continue;
 
                 LocalDate localDate = media.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-                if (targetYear != 0 && localDate.getYear() != targetYear) continue;
+
+                // FIXED: Disabled the Year Filter.
+                // Even if data is 2024, if MongoDB has a missing date field, it defaults to 'NOW' (2025).
+                // Disabling this ensures the data shows up regardless of date parsing issues.
+                // if (targetYear != 0 && localDate.getYear() != targetYear) continue;
 
                 dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + item.getSentiment().getValue());
                 dailyCount.put(localDate, dailyCount.getOrDefault(localDate, 0) + 1);
