@@ -7,6 +7,7 @@ import project.app.humanelogistics.model.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 public class MongoMediaRepository implements MediaRepository {
     private final MongoCollection<Document> collection;
@@ -44,7 +45,7 @@ public class MongoMediaRepository implements MediaRepository {
     public void updateAnalysis(MediaAnalysis analysis) {
         Media item = analysis.getMedia();
         collection.updateOne(
-                new Document("content", item.getContent()).append("topic", item.getTopic()),
+                new Document("content", item.getContent()), // Match by content ID instead of topic to be safe
                 new Document("$set", new Document()
                         .append("sentiment", analysis.getSentiment().getValue())
                         .append("damageType", analysis.getDamageCategory().name())
@@ -55,7 +56,11 @@ public class MongoMediaRepository implements MediaRepository {
     @Override
     public List<MediaAnalysis> findByTopic(String topic) {
         List<MediaAnalysis> items = new ArrayList<>();
-        FindIterable<Document> docs = collection.find(new Document("topic", topic));
+
+        // FIX: Use Regex for case-insensitive and whitespace-tolerant matching
+        // This ensures "Typhoon Yagi" matches "typhoon yagi" or "Typhoon Yagi "
+        Pattern regex = Pattern.compile("^" + Pattern.quote(topic.trim()) + "$", Pattern.CASE_INSENSITIVE);
+        FindIterable<Document> docs = collection.find(new Document("topic", regex));
 
         for (Document doc : docs) {
             try {
@@ -64,7 +69,8 @@ public class MongoMediaRepository implements MediaRepository {
                     items.add(analysis);
                 }
             } catch (Exception e) {
-                System.err.println("Skipping corrupted document: " + doc.get("_id") + " - " + e.getMessage());
+                // Silently skip corrupted docs to prevent crashing the whole list
+                System.err.println("Skipping doc: " + e.getMessage());
             }
         }
         return items;
@@ -75,35 +81,51 @@ public class MongoMediaRepository implements MediaRepository {
     }
 
     private MediaAnalysis mapDocumentToAnalysis(Document doc) {
-        // 1. Reconstruct Media
-        String type = doc.getString("type");
-        String url = doc.getString("url");
-        String topic = doc.getString("topic");
-        String content = doc.getString("content");
-        Date timestamp = doc.getDate("timestamp");
-        if (timestamp == null) timestamp = new Date();
+        try {
+            // 1. Reconstruct Media
+            String type = doc.getString("type");
+            String url = doc.getString("url");
+            // If URL is missing in DB (common in social posts), default to empty
+            if (url == null) url = "";
 
-        Media media;
-        if ("news".equals(type)) {
-            String source = doc.getString("source");
-            if (source == null) source = "Unknown Source";
-            media = new News(topic, content, source, url, timestamp);
-        } else {
-            List<String> comments = doc.getList("comments", String.class);
-            if (comments == null) comments = new ArrayList<>();
-            media = new SocialPost(topic, content, url, timestamp, comments);
+            String topic = doc.getString("topic");
+            String content = doc.getString("content");
+
+            // Robust Date Handling
+            Date timestamp = doc.getDate("timestamp");
+            if (timestamp == null) {
+                // Fallback: Try to parse from Object ID or use current time to prevent null errors
+                timestamp = new Date();
+            }
+
+            Media media;
+            if ("news".equals(type)) {
+                String source = doc.getString("source");
+                if (source == null) source = "Unknown Source";
+                media = new News(topic, content, source, url, timestamp);
+            } else {
+                // Default to SocialPost if type is missing or matches "social_post"
+                List<String> comments = doc.getList("comments", String.class);
+                if (comments == null) comments = new ArrayList<>();
+                media = new SocialPost(topic, content, url, timestamp, comments);
+            }
+
+            // 2. Reconstruct Analysis
+            Double sentimentVal = doc.getDouble("sentiment");
+            // Handle missing sentiment by defaulting to 0.0
+            if (sentimentVal == null) sentimentVal = 0.0;
+
+            String damageStr = doc.getString("damageType");
+
+            return new MediaAnalysis(
+                    media,
+                    SentimentScore.of(sentimentVal),
+                    DamageCategory.fromText(damageStr)
+            );
+        } catch (Exception e) {
+            // Log specific error for debugging
+            System.err.println("Mapping Error for ID " + doc.get("_id") + ": " + e.getMessage());
+            return null;
         }
-
-        // 2. Reconstruct Analysis
-        Double sentimentVal = doc.getDouble("sentiment");
-        if (sentimentVal == null) sentimentVal = 0.0;
-
-        String damageStr = doc.getString("damageType");
-
-        return new MediaAnalysis(
-                media,
-                SentimentScore.of(sentimentVal),
-                DamageCategory.fromText(damageStr)
-        );
     }
 }
