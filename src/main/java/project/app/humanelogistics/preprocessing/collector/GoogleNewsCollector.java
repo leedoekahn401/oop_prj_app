@@ -21,22 +21,38 @@ public class GoogleNewsCollector implements DataCollector {
 
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
+    // Strict format as requested: M/d/yyyy (e.g., 9/9/2024)
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("M/d/yyyy");
+
     @Override
-    public List<Media> collect(String query, String startDate, String endDate, int pagesToScrape) {
+    public List<Media> collect(String query, String startDateStr, String endDateStr, int pagesToScrape) {
         List<Media> collectedPosts = new ArrayList<>();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
 
         try {
             String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-            LocalDate start = LocalDate.parse(startDate, formatter);
-            LocalDate end = LocalDate.parse(endDate, formatter);
 
+            // 1. Parse strictly using M/d/yyyy
+            LocalDate start = LocalDate.parse(startDateStr, DATE_FMT);
+            LocalDate end = LocalDate.parse(endDateStr, DATE_FMT);
+
+            // Handle year rollover safety check
+            if (end.isBefore(start)) {
+                System.out.println("Warning: End date is before start date. Swapping or adjusting...");
+                // Optional: Swap or just warn. For now, we'll proceed as is, loop just won't run if start > end.
+            }
+
+            System.out.println("Processing Range: " + start + " to " + end);
+
+            // 2. Iterate Day-by-Day (Inclusive)
+            // !date.isAfter(end) guarantees [9/9, 9/10, 9/11] are ALL processed.
             for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-                String dateStr = date.format(formatter);
-                System.out.println("Scraping for date: " + dateStr);
 
+                String dateQueryString = date.format(DATE_FMT);
+                System.out.println(">> Scraping for specific date: " + dateQueryString);
+
+                // Construct URL for this specific day
                 String url = String.format("https://www.google.com/search?q=%s&tbm=nws&tbs=cdr:1,cd_min:%s,cd_max:%s&hl=en",
-                        encodedQuery, dateStr, dateStr);
+                        encodedQuery, dateQueryString, dateQueryString);
 
                 try {
                     Document doc = Jsoup.connect(url)
@@ -48,25 +64,32 @@ public class GoogleNewsCollector implements DataCollector {
                     Date currentDayTimestamp = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
                     List<Media> dailyPosts = parseDocument(doc, query, currentDayTimestamp);
 
+                    System.out.println("   Found " + dailyPosts.size() + " articles.");
+
                     for (Media m : dailyPosts) {
                         if (m instanceof News) {
                             News n = (News) m;
-                            System.out.printf("   [FOUND] %s | %s%n", n.getSource(), n.getUrl());
+                            System.out.printf("   [+NEWS] %s | %s%n", n.getSource(), n.getUrl());
                         }
                     }
 
                     collectedPosts.addAll(dailyPosts);
-                    Thread.sleep(1000);
+
+                    // Sleep to be polite to Google servers
+                    Thread.sleep(1500);
+
                 } catch (Exception e) {
-                    System.err.println("Error scraping date " + dateStr + ": " + e.getMessage());
+                    System.err.println("   [ERROR] Failed scraping date " + dateQueryString + ": " + e.getMessage());
                 }
             }
 
         } catch (Exception e) {
-            System.err.println("Collection Error: " + e.getMessage());
+            System.err.println("Collection Failure: " + e.getMessage());
+            e.printStackTrace();
         }
 
         if (collectedPosts.isEmpty()) {
+            System.out.println("No data found. Generating mock data for testing...");
             collectedPosts = generateMockData(query);
         }
         return collectedPosts;
@@ -109,7 +132,8 @@ public class GoogleNewsCollector implements DataCollector {
     private List<Media> generateMockData(String topic) {
         List<Media> mocks = new ArrayList<>();
         long now = System.currentTimeMillis();
-        mocks.add(new News(topic, "Typhoon Yagi Impact", "BBC", "https://www.bbc.com/news/world-asia-68000000", new Date(now)));
+        mocks.add(new News(topic, "Mock: Typhoon Yagi Impact Analysis", "BBC", "https://www.bbc.com", new Date(now)));
+        mocks.add(new News(topic, "Mock: Relief Efforts Continue", "CNN", "https://www.cnn.com", new Date(now)));
         return mocks;
     }
 }

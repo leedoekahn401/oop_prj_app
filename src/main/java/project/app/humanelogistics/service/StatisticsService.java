@@ -63,14 +63,13 @@ public class StatisticsService {
             for (MediaAnalysis item : items) {
                 Media media = item.getMedia();
 
-                // FIXED: Removed the check for "getValue() == 0.0"
                 if (media.getTimestamp() == null) continue;
 
-                LocalDate localDate = media.getTimestamp().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                // CRITICAL FIX: Use UTC to match MongoDB storage.
+                // Previously: ZoneId.systemDefault() caused dates to shift (e.g., Sept 3 10PM UTC -> Sept 4 5AM Local)
+                LocalDate localDate = media.getTimestamp().toInstant().atZone(ZoneId.of("UTC")).toLocalDate();
 
-                // FIXED: Disabled the Year Filter.
-                // Even if data is 2024, if MongoDB has a missing date field, it defaults to 'NOW' (2025).
-                // Disabling this ensures the data shows up regardless of date parsing issues.
+                // Year filter remains disabled as per previous configuration
                 // if (targetYear != 0 && localDate.getYear() != targetYear) continue;
 
                 dailyTotal.put(localDate, dailyTotal.getOrDefault(localDate, 0.0) + item.getSentiment().getValue());

@@ -4,7 +4,7 @@ import project.app.humanelogistics.model.MediaAnalysis;
 import java.util.List;
 
 public interface MediaRepository {
-    void save(MediaAnalysis analysis);
+    boolean save(MediaAnalysis analysis);
 
     void updateAnalysis(MediaAnalysis analysis);
 

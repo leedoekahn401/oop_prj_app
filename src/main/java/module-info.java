@@ -22,6 +22,10 @@ module project.app.humanelogistics {
     exports project.app.humanelogistics.model;
     opens project.app.humanelogistics.model to javafx.fxml;
 
+    // Added: Allow JavaFX to access the view package
+    exports project.app.humanelogistics.view;
+    opens project.app.humanelogistics.view to javafx.fxml;
+
     exports project.app.humanelogistics.preprocessing;
     opens project.app.humanelogistics.preprocessing to javafx.fxml;
 
